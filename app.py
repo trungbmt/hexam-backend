@@ -1,8 +1,14 @@
 from flask import Flask
+import json
+import pymongo
 
 app = Flask(__name__)
+
+client = pymongo.MongoClient("mongodb+srv://trungbmt:hncUKt3dhGya00ko@cluster0.nspaq.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+db = client['hexam']
 
 
 @app.route('/')
 def hello():
-    return 'Hello, World!'
+    print(db.user.find_one())
+    return "Hello world"
