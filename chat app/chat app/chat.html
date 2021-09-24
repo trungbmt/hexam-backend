@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!-- Coding By CodingNepal - youtube.com/codingnepal -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Realtime Chat App | CodingNepal</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css"/>
+</head>
+<body>
+  <div class="wrapper">
+    <section class="chat-area">
+      <header>
+        <a href="index.html" class="back-icon"><i class="fas fa-arrow-left"></i></a>
+        <img src="images/hacker2.png" alt="">
+        <div class="details">
+          <span>RumTQN</span>
+          <p><i class="fas fa-circle" style="color: green;"></i> Online</p>
+        </div>
+      </header>
+      <div class="chat-box">
+        <!-- đoạn này là khi ko có tin nhắn -->
+        <!-- <div class="text">Dòng này thông báo Không có tin nhắn nào có sẵn. nếu có tin nhắn nó sẽ display none dòng này</div> -->
+        <div class="chat incoming">
+          <img src="images/hacker2.png" alt="">
+          <div class="details">
+            <p>Mày muốn mất ních phây búc không nhóc!</p>
+          </div>
+        </div>
+        <div class="chat outgoing">
+          <div class="details">
+            <p>Dạ thôi em xin anh :(</p>
+          </div>
+        </div>
+        <div class="chat outgoing">
+          <div class="details">
+            <p>Anh tha em, em biết chi mô</p>
+          </div>
+        </div>
+        <div class="chat incoming">
+          <img src="images/hacker2.png" alt="">
+          <div class="details">
+            <p>DCMM! cái ních phây búc của m tao làm gọn lắm</p>
+          </div>
+        </div>
+          <div class="chat incoming">
+          <img src="images/hacker2.png" alt="">
+          <div class="details">
+            <p>Vài dòng HTML (HyperText Machine Learning) là xong, m coi chừng tao</p>
+          </div>
+        </div>
+        <div class="chat outgoing">
+          <div class="details">
+            <p>DCMM Luôn</p>
+          </div>
+        </div>
+      </div>
+      <form action="#" class="typing-area">
+        <input type="text" class="incoming_id" name="incoming_id" value="" hidden>
+        <input type="text" name="message" class="input-field" placeholder="Type a message here..." autocomplete="off">
+        <button><i class="fab fa-telegram-plane"></i></button>
+      </form>
+    </section>
+  </div>
+
+  <script src="js/chat.js"></script>
+
+</body>
+</html>
