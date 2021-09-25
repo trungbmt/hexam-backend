@@ -11,4 +11,7 @@ db = client['hexam']
 @app.route('/')
 def hello():
     print(db.user.find_one())
-    return "Hello world"
+    return "Hello world test 123"
+
+if __name__ == '__main__':
+    app.run(debug=True)

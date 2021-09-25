@@ -1,0 +1,58 @@
+[33mcommit 273eff440cfa65cabcf582ec66195d164df3d721[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: trungbmt <phamductrungbmt@gmail.com>
+Date:   Fri Sep 24 14:28:21 2021 +0700
+
+    remove some file
+
+[33mcommit 207ae4cd352d8da57ec53cf268dc93871048de48[m
+Author: trungbmt <phamductrungbmt@gmail.com>
+Date:   Fri Sep 24 14:27:52 2021 +0700
+
+    add requirement.txt
+
+[33mcommit ed5e4a609a73e6d7a6933050611db311ea334d19[m
+Author: Trần Quốc Nguyên <54529371+tqnguyen19it3@users.noreply.github.com>
+Date:   Fri Sep 24 12:09:09 2021 +0700
+
+    Add files via upload
+    
+    cái này mẫu 2 nhé
+
+[33mcommit f3826b7a21a9051e9f5700c1d22da6df33913948[m
+Author: Trần Quốc Nguyên <54529371+tqnguyen19it3@users.noreply.github.com>
+Date:   Fri Sep 24 11:51:23 2021 +0700
+
+    Add files via upload
+    
+    Mẫu chat, ae muốn build theo như này hay sao
+
+[33mcommit d86c9a448a7a19a1d04e7b65b28c84d4648e613c[m
+Merge: a4dd369 05c381a
+Author: trungbmt <phamductrungbmt@gmail.com>
+Date:   Mon Sep 20 12:46:48 2021 +0700
+
+    Merge branch 'main' of https://github.com/trungbmt/hexam-backend
+
+[33mcommit a4dd369f7e804a9155595586e518c81e62721a26[m
+Author: trungbmt <phamductrungbmt@gmail.com>
+Date:   Mon Sep 20 12:46:38 2021 +0700
+
+    init database
+
+[33mcommit 05c381a705e199bfe202a4cbec650a024d67394a[m
+Author: Phạm Trần Triêm <74364380+phamtrantriem@users.noreply.github.com>
+Date:   Mon Sep 20 12:38:59 2021 +0700
+
+    Create README.md
+
+[33mcommit a07fcaaf9d9e3c4e5424844c01c4ea59f06d9aee[m
+Author: trungbmt <phamductrungbmt@gmail.com>
+Date:   Mon Sep 20 12:04:13 2021 +0700
+
+    init project
+
+[33mcommit 9b9552a1192f24efb8e591b38cf08fdfdc09eaae[m
+Author: trungbmt <phamductrungbmt@gmail.com>
+Date:   Mon Sep 20 11:49:40 2021 +0700
+
+    Initial commit
