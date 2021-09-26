@@ -1,7 +1,6 @@
-from flask import app
-from flask.templating import render_template
 from forms import RegistrationForm, LoginForm
-from app import Flask
+from app import render_template
+from app import app
 
 
 @app.route("/")
@@ -12,7 +11,7 @@ def home():
 @app.route("/register")
 def register():
     registerForm = RegistrationForm()
-    return render_template('templates/auth/register.html', form=registerForm)
+    return render_template('auth/register.html', form=registerForm, title="Đăng ký")
 
 
 @app.route("/login")
