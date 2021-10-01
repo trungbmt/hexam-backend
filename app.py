@@ -1,8 +1,6 @@
 from flask import Flask
 from config import Config
-from flask.templating import render_template
 from flask_pymongo import MongoClient
-import secrets
 
 app = Flask(__name__)
 app.config.from_object(Config)

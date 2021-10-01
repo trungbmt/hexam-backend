@@ -1,8 +1,7 @@
-from bcrypt import hashpw
 from flask.helpers import flash, url_for
 from flask.templating import render_template
 from forms import LoginForm, RegistrationForm
-from flask import Blueprint, json, redirect
+from flask import Blueprint, redirect
 from app import db
 import utils
 
