@@ -1,19 +1,20 @@
-from forms import RegistrationForm
 from flask import Flask
+from config import Config
 from flask.templating import render_template
-import json
-import pymongo
+from flask_pymongo import MongoClient
 import secrets
 
 app = Flask(__name__)
+app.config.from_object(Config)
+
+
+mongodb_client = MongoClient("mongodb+srv://trungbmt:hncUKt3dhGya00ko@cluster0.nspaq.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+db = mongodb_client.hexam
+
 import routes
-
-app.config['SECRET_KEY'] = secrets.token_urlsafe(16)
-
-client = pymongo.MongoClient("mongodb+srv://trungbmt:hncUKt3dhGya00ko@cluster0.nspaq.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
-db = client['hexam']
-
+from auth import auth
+app.register_blueprint(auth, url_prefix='/auth')
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True) 

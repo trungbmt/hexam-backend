@@ -1,8 +1,9 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField
 from wtforms.fields.core import BooleanField
-from wtforms.fields.simple import PasswordField, SubmitField
+from wtforms.fields.simple import FileField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
+from flask_wtf.file import FileAllowed
 
 class RegistrationForm(FlaskForm):
     username = StringField('Tên tài khoản', validators=[DataRequired(), Length(min=5, max=32)])
@@ -12,7 +13,12 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField('Đăng ký')
 
 class LoginForm(FlaskForm):
-    username_or_email = StringField('Tài khoản hoặc Email', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Mật khẩu', validators=[DataRequired()])
     remember = BooleanField('Lưu đăng nhập')
     submit = SubmitField('Đăng nhập')
+
+class UpdateAccountForm(FlaskForm):
+    username = StringField('Tên hiển thị', validators=[DataRequired(), Length(min=5, max=32)])
+    picture = FileField('Ảnh đại diện', validators=[FileAllowed(['png', 'jpg'], "Vui lòng chỉ chọn định dạng ảnh PNG hoặc JPG!")])
+    submit = SubmitField('Cập nhật')
