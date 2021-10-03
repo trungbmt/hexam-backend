@@ -8,18 +8,38 @@
             <div class="form-group">
                 {{ form.username.label(class="form-control-label") }}
                 {{ form.username(class="form-control") }}
+                {% for error in form.errors['username'] %}
+                    <div class="alert alert-danger">
+                        <strong>Error!</strong> {{error}}
+                    </div>
+                {% endfor %}
             </div>
             <div class="form-group">
                 {{ form.email.label(class="form-control-label") }}
                 {{ form.email(class="form-control") }}
+                {% for error in form.errors['email'] %}
+                    <div class="alert alert-danger">
+                        <strong>Error!</strong> {{error}}
+                    </div>
+                {% endfor %}
             </div>
             <div class="form-group">
                 {{ form.password.label(class="form-control-label") }}
                 {{ form.password(class="form-control") }}
+                {% for error in form.errors['password'] %}
+                    <div class="alert alert-danger">
+                        <strong>Error!</strong> {{error}}
+                    </div>
+                {% endfor %}
             </div>
             <div class="form-group">
                 {{ form.confirm_password.label(class="form-control-label") }}
                 {{ form.confirm_password(class="form-control") }}
+                {% for error in form.errors['confirm_password'] %}
+                    <div class="alert alert-danger">
+                        <strong>Error!</strong> {{error}}
+                    </div>
+                {% endfor %}
             </div>
             {{ form.submit(class="btn btn-outline-info") }}
         </form>

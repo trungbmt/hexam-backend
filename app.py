@@ -1,6 +1,7 @@
 from flask import Flask
 from config import Config
 from flask_pymongo import MongoClient
+from flask_login import LoginManager, login_manager
 
 app = Flask(__name__)
 app.config.from_object(Config)
