@@ -19,6 +19,6 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Đăng nhập')
 
 class UpdateAccountForm(FlaskForm):
-    username = StringField('Tên hiển thị', validators=[DataRequired(), Length(min=5, max=32)])
+    username = StringField('Tên tài khoản', validators=[DataRequired(), Length(min=5, max=32)])
     picture = FileField('Ảnh đại diện', validators=[FileAllowed(['png', 'jpg'], "Vui lòng chỉ chọn định dạng ảnh PNG hoặc JPG!")])
     submit = SubmitField('Cập nhật')

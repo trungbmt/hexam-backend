@@ -5,11 +5,12 @@ from flask_login import UserMixin
 import utils
 
 class User(UserMixin):
-    def __init__(self, _id, username, email, password, phone=None, fb_id=None, gg_id=None, dob=None, avatar=None):
+    def __init__(self, _id, username, email, password, displayname=None, phone=None, fb_id=None, gg_id=None, dob=None, avatar=None):
         self._id = _id
         self.username = username
         self.email = email
         self.password = password
+        self.displayname = displayname
         self.phone = phone
         self.fb_id = fb_id
         self.gg_id = gg_id

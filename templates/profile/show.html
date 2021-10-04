@@ -1,0 +1,294 @@
+{%  extends "base.html" %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+<link href="https://unpkg.com/gijgo@1.9.13/css/gijgo.min.css" rel="stylesheet" type="text/css" >
+{% endblock css %}
+{% block title %}{{title}}{% endblock title %}
+{% block content %}
+<div class="page-content page-container" id="page-content">
+    <div class="padding">
+        <div class="row container d-flex justify-content-center">
+            <div class="col-xl-12 col-md-12">
+                <div class="card user-card-full">
+                    <div class="row m-l-0 m-r-0">
+                        <div class="col-sm-4 bg-c-lite-green user-profile">
+                            <div class="card-block text-center text-white">
+                                <div class="m-b-25"> <img src="https://img.icons8.com/bubbles/100/000000/user.png" class="img-radius" alt="User-Profile-Image"> </div>
+                                <h4 class="f-w-600">{{ user['username'] }}</h4>
+                                <p>Web Designer</p>
+                                <button type="button" data-toggle="modal" data-target="#myModalEdit" class="tg-btn btn btn-info">Chỉnh sửa</button>
+                                <button type="button" class="btn btn-danger">Đăng xuất</button>
+                                <!-- <button type="button" class="btn btn-success">Kết bạn</button>
+                                <button type="button" class="btn btn-primary">Nhắn tin</button> -->
+                                <div class="social-buttons mt-5"> <button class="neo-button"><i class="fa fa-facebook fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-linkedin fa-1x"></i></button> <button class="neo-button"><i class="fa fa-google fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-youtube fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-twitter fa-1x"></i> </button> </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <div class="card-block">
+                                <h6 class="m-b-20 p-b-5 b-b-default f-w-600">Thông tin cá nhân</h6>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <p class="m-b-10 f-w-600">Email</p>
+                                        <h6 class="text-muted f-w-400">{{ user['email'] }}</h6>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <p class="m-b-10 f-w-600">Số điện thoại</p>
+                                        <h6 class="text-muted f-w-400">{{ user['phone'] }}</h6>
+                                    </div>
+                                </div>
+                                <h6 class="m-b-20 m-t-40 p-b-5 b-b-default f-w-600">Thông tin khác</h6>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <p class="m-b-10 f-w-600">Giới tính</p>
+                                        <h6 class="text-muted f-w-400">Nam</h6>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <p class="m-b-10 f-w-600">Ngày sinh</p>
+                                        <h6 class="text-muted f-w-400">25/09/2001</h6>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <p class="m-b-10 f-w-600">Địa chỉ</p>
+                                        <h6 class="text-muted f-w-400">12 ABCD</h6>
+                                    </div>
+                                </div>
+                                <!-- <div class="card-footer bg-white px-0 "> --><br>
+                                    <h6 class="m-b-20 p-b-5 b-b-default f-w-600">Bạn bè</h6>
+                                    <div class="row">
+                                        <div class="col-md-auto">
+                                              <button type="button" data-toggle="modal" data-target="#myModalFriendRequest" class="btn btn-outline-primary">
+                                                Xem lời mời kết bạn <span class="badge badge-danger">5</span>
+                                              </button>
+                                        </div>
+                                        <div class="col-md-auto ">
+                                            <ul class="list-inline">
+                                                <li class="list-inline-item"> 
+                                                    <img src="https://res.cloudinary.com/dxfq3iotg/image/upload/v1573035860/Pra/Hadie-profile-pic-circle-1.png" alt="DP" class=" rounded-circle img-fluid " width="35" height="35"> 
+                                                    <img src="https://res.cloudinary.com/dxfq3iotg/image/upload/v1573035909/Pra/Loren-profile-pic-circle.png" alt="DP" class=" rounded-circle img-fluid " width="35" height="35"> 
+                                                    <img src="https://res.cloudinary.com/dxfq3iotg/image/upload/v1573035929/Pra/59d280613165c000014cc031_circleniamhhogan.png" alt="DP" class=" rounded-circle img-fluid " width="35" height="35"> <img src="https://res.cloudinary.com/dxfq3iotg/image/upload/v1573035929/Pra/59d280613165c000014cc031_circleniamhhogan.png" alt="DP" class=" rounded-circle img-fluid " width="35" height="35">
+                                                </li>
+                                                <li class="list-inline-item"> 
+                                                    <button class="btn" type="button" data-toggle="modal" data-target="#myModalFriendList"><img src="https://img.icons8.com/metro/26/000000/more.png" width="20" height="20" class="mr-2 more"><small>MORE</small></i></button> 
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                <!-- </div> -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- MODAL EDIT -->
+<div class="modal" id="myModalEdit">
+    <div class="modal-dialog">
+      <div class="modal-content">
+      
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h2 class="modal-title">Cập nhật thông tin</h2>
+          <button type="button" class="close" data-dismiss="modal">×</button>
+        </div>
+        
+        <!-- Modal body -->
+        <div class="modal-body">
+          <form action="" method="">
+            <div class="form-group">
+              <label for="name">Họ và tên:</label>
+              <input type="text" class="form-control" placeholder="Nhập họ và tên" name="">
+            </div>
+            <div class="form-group">
+                <label for="exampleFormControlFile1">Ảnh đại diện:</label>
+                <input type="file" class="form-control-file" id="exampleFormControlFile1">
+            </div>
+            <div class="form-group">
+              <label for="email">Email:</label>
+              <input type="email" class="form-control" placeholder="Nhập Email email" name="email">
+            </div>
+            <div class="form-group">
+              <label for="SĐT">Số điện thoại:</label>
+              <input type="text" class="form-control" placeholder="Nhập số điện thoại" name="">
+            </div>
+            <label for="SĐT">Giới tính:</label>
+            <div class="form-check-inline">
+              <label class="form-check-label">
+                <input type="radio" class="form-check-input" name="optradio">Nam
+              </label>
+            </div>
+            <div class="form-check-inline">
+              <label class="form-check-label">
+                <input type="radio" class="form-check-input" name="optradio">Nữ
+              </label>
+            </div></br>
+            <label for="SĐT">Ngày sinh:</label>
+            <input id="datepicker" width="276" />
+            <div class="form-group">
+              <label for="address">Địa chỉ:</label>
+              <input type="text" class="form-control" placeholder="Nhập địa chỉ" name="">
+            </div>
+            <button type="submit" class="btn btn-primary">Cập nhật</button>
+          </form>
+        </div>
+        
+        <!-- Modal footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+        </div>
+        
+      </div>
+    </div>
+</div>
+
+<!-- MODAL friend request -->
+<div class="modal" id="myModalFriendRequest">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content">
+      
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h2 class="modal-title">Lời mời kết bạn</h2>
+          <button type="button" class="close" data-dismiss="modal">×</button>
+        </div>
+        
+        <!-- Modal body -->
+        <div class="modal-body">
+                <div class="card p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="image"> <img src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=500&q=80" class="rounded" width="155"> </div>
+                        <div class="ml-3 w-100">
+                            <h4 class="mb-0 mt-0">Tran Quoc Nguyen</h4> <span>Nam</span>
+                            <div class="button mt-2 d-flex flex-row align-items-center"> <button class="btn btn-sm btn-outline-success w-100">Đồng ý</button> <button class="btn btn-sm btn-danger w-100 ml-2">Hủy</button> </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="image"> <img src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=500&q=80" class="rounded" width="155"> </div>
+                        <div class="ml-3 w-100">
+                            <h4 class="mb-0 mt-0">Tran Quoc Nguyen</h4> <span>Nam</span>
+                            <div class="button mt-2 d-flex flex-row align-items-center"> <button class="btn btn-sm btn-outline-success w-100">Đồng ý</button> <button class="btn btn-sm btn-danger w-100 ml-2">Hủy</button> </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="image"> <img src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=500&q=80" class="rounded" width="155"> </div>
+                        <div class="ml-3 w-100">
+                            <h4 class="mb-0 mt-0">Tran Quoc Nguyen</h4> <span>Nam</span>
+                            <div class="button mt-2 d-flex flex-row align-items-center"> <button class="btn btn-sm btn-outline-success w-100">Đồng ý</button> <button class="btn btn-sm btn-danger w-100 ml-2">Hủy</button> </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+        
+        <!-- Modal footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+        </div>
+        
+      </div>
+    </div>
+</div>
+
+<!-- MODAL friend list -->
+<div class="modal" id="myModalFriendList">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content">
+      
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h2 class="modal-title">Danh sách bạn bè</h2>
+          <button type="button" class="close" data-dismiss="modal">×</button>
+        </div>
+        
+        <!-- Modal body -->
+        <div class="modal-body" style="background: #e5e5e5;">
+            <div class="content">
+                <div class="container">
+                    <!-- end row -->
+                    <div class="row">
+                        <div class="col-lg-4 card" style="background: white; border-radius: 10px;">
+                            <div class="text-center">
+                                <div class="member-card pt-2 pb-2">
+                                    <div class="thumb-lg member-thumb mx-auto"><img src="https://bootdey.com/img/Content/avatar/avatar2.png" class="rounded-circle img-thumbnail" alt="profile-image"></div>
+                                    <div class="">
+                                        <h4 class="name-design">Phạm Đức Trung</a></h4>
+                                        <p class="email-design text-muted">pdtrung@gmail.com</p>
+                                        <span><a href="#" class="text-pink">Trang cá nhân</a></span>
+                                    </div>
+                                    <ul class="social-links list-inline mt-2">
+                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Facebook"><i class="fa fa-facebook"></i></a></li>
+                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Twitter"><i class="fa fa-twitter"></i></a></li>
+                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Skype"><i class="fa fa-skype"></i></a></li>
+                                    </ul>
+                                    <button type="button" class="btn btn-primary btn-rounded waves-effect w-md waves-light"><i class='fab fa-facebook-messenger'></i></button></button>
+                                    <button type="button" class="btn btn-danger btn-rounded waves-effect w-md waves-light"><i class="fa fa-user-times"></i></button>
+                                </div>
+                            </div>  
+                        </div>
+                        <!-- end col -->
+                        <div class="col-lg-4 card" style="background: white; border-radius: 10px;">
+                            <div class="text-center ">
+                                <div class="member-card pt-2 pb-2">
+                                    <div class="thumb-lg member-thumb mx-auto"><img src="https://bootdey.com/img/Content/avatar/avatar3.png" class="rounded-circle img-thumbnail" alt="profile-image"></div>
+                                    <div class="">
+                                        <h4 class="name-design">Pham Trần Triêm</h4>
+                                        <p class="email-design text-muted">pttriem@gmail.com></p>
+                                        <span><a href="#" class="text-pink">Trang cá nhân</a></span>
+                                    </div>
+                                    <ul class="social-links list-inline mt-2">
+                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Facebook"><i class="fa fa-facebook"></i></a></li>
+                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Twitter"><i class="fa fa-twitter"></i></a></li>
+                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Skype"><i class="fa fa-skype"></i></a></li>
+                                    </ul>
+                                    <button type="button" class="btn btn-primary btn-rounded waves-effect w-md waves-light"><i class='fab fa-facebook-messenger'></i></button></button>
+                                    <button type="button" class="btn btn-danger btn-rounded waves-effect w-md waves-light"><i class="fa fa-user-times"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- end col -->
+                        <div class="col-lg-4 card" style="background: white; border-radius: 10px;">
+                            <div class="text-center">
+                                <div class="member-card pt-2 pb-2">
+                                    <div class="thumb-lg member-thumb mx-auto"><img src="https://bootdey.com/img/Content/avatar/avatar4.png" class="rounded-circle img-thumbnail" alt="profile-image"></div>
+                                    <div class="">
+                                        <h4 class="name-design">Nguyễn Đăng Anh Tú</h4>
+                                        <p class="text-muted email-design">ndatu@gmail.com</p>
+                                        <span><a href="#" class="text-pink">Trang cá nhân</a></span>
+                                    </div>
+                                    <ul class="social-links list-inline mt-2">
+                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Facebook"><i class="fa fa-facebook"></i></a></li>
+                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Twitter"><i class="fa fa-twitter"></i></a></li>
+                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Skype"><i class="fa fa-skype"></i></a></li>
+                                    </ul>
+                                    <button type="button" class="btn btn-primary btn-rounded waves-effect w-md waves-light"><i class='fab fa-facebook-messenger'></i></button></button>
+                                    <button type="button" class="btn btn-danger btn-rounded waves-effect w-md waves-light"><i class="fa fa-user-times"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- end col -->
+                    </div>
+                </div>
+                <!-- container -->
+            </div>
+        </div>
+        
+        <!-- Modal footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+        </div>
+        
+      </div>
+    </div>
+</div>
+{% endblock content %}
+{% block js %}
+    <script src="https://unpkg.com/gijgo@1.9.13/js/gijgo.min.js" type="text/javascript"></script>
+    <script>
+        $('#datepicker').datepicker({
+            uiLibrary: 'bootstrap4'
+        });
+    </script>
+{% endblock js %}

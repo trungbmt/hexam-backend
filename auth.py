@@ -47,6 +47,7 @@ def register():
             user = {
                 "email": registerForm.email.data,
                 "username": registerForm.username.data,
+                "displayname": registerForm.username.data,
                 "password": utils.get_hashed_password(registerForm.password.data)
             }
             if db.users.insert_one(user):
