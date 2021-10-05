@@ -1,3 +1,4 @@
+import os
 from flask import flash, render_template, url_for, redirect, request, jsonify
 import flask_login
 from flask_login import current_user
@@ -5,7 +6,14 @@ from flask_login.utils import login_user
 from app import app
 from forms import UpdateAccountForm
 from models import User
+from werkzeug.utils import secure_filename
+
 import json
+
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route("/")
 @app.route("/home")
@@ -18,13 +26,12 @@ def profile(username):
     user = User.get_by_username(username)
     if not user:
         return redirect('/404')
-        
+    login_user(user)
     form = UpdateAccountForm()
     if request.method == 'POST':
         if form.validate_on_submit() and current_user.is_authenticated:
             if(user.username == current_user.username):
                 user.displayname = form.displayname.data
-                user.avatar = form.picture.data
                 user.phone = form.phone.data
                 user.dob = form.dob.data
                 user.gender = form.gender.data
@@ -33,7 +40,17 @@ def profile(username):
                 if not user.email:
                     user.email = form.email.data
 
+                file = form.picture.data
+                if file and file.filename !='' and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    file.save(os.path.join(app.config['AVATAR_FOLDER'], filename))
+                    user.avatar = 'images/avatars/'+filename
+
+                
+
                 user.update_to_mongo()
+                
+                flash("Cập nhật thành công!", "success")
                 
     # if flask_login.current_user.is_authenticated:
 

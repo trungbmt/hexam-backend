@@ -56,7 +56,7 @@ def register():
                 flash("Đăng ký tài khoản thành công!", "success")
                 return redirect('/home')
             else:
-                flash("Lỗi hệ thống!")
+                flash("Lỗi hệ thống!", "danger")
     return render_template('auth/register.html', form=registerForm, title="Đăng ký")
 
 

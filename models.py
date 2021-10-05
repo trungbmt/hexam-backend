@@ -7,7 +7,7 @@ from flask_login import UserMixin
 import utils
 
 class User(UserMixin):
-    def __init__(self, _id, username, email, password, displayname=None, gender=None, phone=None, address=None, fb_id=None, gg_id=None, dob=None, avatar=None):
+    def __init__(self, _id, username, email, password, displayname=None, gender=None, phone=None, address=None, fb_id=None, gg_id=None, dob=None, avatar="images/default_avatar.png"):
         self._id = _id
         self.username = username
         self.email = email
@@ -70,6 +70,6 @@ class User(UserMixin):
             "dob": self.dob,
             "avatar": self.avatar,
             "address": self.address,
-            "gender": self.gender
+            "gender": int(self.gender)
         })
 

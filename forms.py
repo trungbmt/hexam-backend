@@ -26,5 +26,5 @@ class UpdateAccountForm(FlaskForm):
     phone = StringField('Số điện thoại', validators=[Length(min=9, max=12)])
     address = StringField('Địa chỉ', validators=[Length(min=5, max=128)])
     dob = StringField('Ngày sinh', validators=[DataRequired()])
-    gender = RadioField('Giới tính', choices=[(1, 'Nam'), (2, 'Nữ'), (3, 'Khác')], validators=[DataRequired()])
+    gender = RadioField('Giới tính', choices=[(1, 'Nam'), (2, 'Nữ'), (0, 'Khác')], validators=[DataRequired()])
     submit = SubmitField('Cập nhật')

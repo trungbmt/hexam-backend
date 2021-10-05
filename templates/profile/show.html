@@ -13,15 +13,17 @@
                     <div class="row m-l-0 m-r-0">
                         <div class="col-sm-4 bg-c-lite-green user-profile">
                             <div class="card-block text-center text-white">
-                                <div class="m-b-25"> <img src="https://img.icons8.com/bubbles/100/000000/user.png" class="img-radius" alt="User-Profile-Image"> </div>
+                                <div class="m-b-25"> <img src="{{url_for('static', filename=user.avatar)}}" class="img-radius img-avatar" alt="User-Profile-Image"> </div>
                                 <h4 class="f-w-600">{{ user['displayname'] or user['username'] }}</h4>
                                 <p>Web Designer</p>
                                 {% if current_user.username == user['username'] %}
                                     <button type="button" data-toggle="modal" data-target="#myModalEdit" class="tg-btn btn btn-info">Chỉnh sửa</button>
-                                    <button type="button" class="btn btn-danger">Đăng xuất</button>
+                                    <a type="button" href="{{ url_for('auth.logout') }}" class="btn btn-danger">Đăng xuất</a>
+                                {% else %}
+                                
+                                    <button type="button" class="btn btn-success">Kết bạn</button>
+                                    <button type="button" class="btn btn-primary">Nhắn tin</button>
                                 {% endif %}
-                                <!-- <button type="button" class="btn btn-success">Kết bạn</button>
-                                <button type="button" class="btn btn-primary">Nhắn tin</button> -->
                                 <div class="social-buttons mt-5"> <button class="neo-button"><i class="fa fa-facebook fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-linkedin fa-1x"></i></button> <button class="neo-button"><i class="fa fa-google fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-youtube fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-twitter fa-1x"></i> </button> </div>
                             </div>
                         </div>
@@ -42,15 +44,25 @@
                                 <div class="row">
                                     <div class="col-sm-4">
                                         <p class="m-b-10 f-w-600">Giới tính</p>
-                                        <h6 class="text-muted f-w-400">Nam</h6>
+                                        <h6 class="text-muted f-w-400">
+                                            {% if user.gender == 1 %}
+                                            Nam
+                                            {% elif user.gender == 2 %}
+                                            Nữ
+                                            {% elif user.gender == 0 %}
+                                            Khác
+                                            {% else %}
+                                            Chưa đặt
+                                            {% endif %}
+                                        </h6>
                                     </div>
                                     <div class="col-sm-4">
                                         <p class="m-b-10 f-w-600">Ngày sinh</p>
-                                        <h6 class="text-muted f-w-400">25/09/2001</h6>
+                                        <h6 class="text-muted f-w-400">{{ user.dob }}</h6>
                                     </div>
                                     <div class="col-sm-4">
                                         <p class="m-b-10 f-w-600">Địa chỉ</p>
-                                        <h6 class="text-muted f-w-400">12 ABCD</h6>
+                                        <h6 class="text-muted f-w-400">{{ user.address }}</h6>
                                     </div>
                                 </div>
                                 <!-- <div class="card-footer bg-white px-0 "> --><br>
@@ -99,7 +111,7 @@
         
         <!-- Modal body -->
         <div class="modal-body">
-          <form action="" method="POST">
+          <form action="" method="POST" enctype="multipart/form-data">
             {{ form.csrf_token }}
             <div class="form-group">
                 {{ form.displayname.label(class="form-control-label") }}
@@ -112,7 +124,7 @@
             </div>
             <div class="form-group">
                 {{ form.picture.label(class="form-control-label") }}
-                {{ form.picture(class="form-control-file", id="exampleFormControlFile1", accept="image/png, image/gif, image/jpeg") }}
+                {{ form.picture(class="form-control-file", id="exampleFormControlFile1", accept="image/*") }}
                 {% for error in form.errors['picture'] %}
                     <div class="alert alert-danger">
                         {{error}}
@@ -141,17 +153,17 @@
                 {{ form.gender.label(class="form-control-label") }}
                 <div class="form-check-inline">
                   <label class="form-check-label">
-                    <input value="1" type="radio" class="form-check-input" name="gender">Nam
+                    <input value="1" type="radio" class="form-check-input gender-input" name="gender">Nam
                   </label>
                 </div>
                 <div class="form-check-inline">
                   <label class="form-check-label">
-                    <input value="2" type="radio" class="form-check-input" name="gender">Nữ
+                    <input value="2" type="radio" class="form-check-input gender-input" name="gender">Nữ
                   </label>
                 </div>
                 <div class="form-check-inline">
                   <label class="form-check-label">
-                    <input value="0" type="radio" class="form-check-input" name="gender">Khác
+                    <input value="0" type="radio" class="form-check-input gender-input" name="gender">Khác
                   </label>
                 </div>
                 {% for error in form.errors['gender'] %}
@@ -162,7 +174,7 @@
             </div>
             <div class="form-group">
                 {{ form.dob.label(class="form-control-label") }}
-                {{ form.dob(id="datepicker", width="276") }}
+                {{ form.dob(id="datepicker", width="276", value=user.dob or Blank) }}
                 {% for error in form.errors['dob'] %}
                     <div class="alert alert-danger">
                         {{error}}
@@ -340,11 +352,29 @@
         $('#datepicker').datepicker({
             uiLibrary: 'bootstrap4'
         });
+        $( document ).ready(function() {
+            let gender = {{ user.gender }};
+
+            $(".gender-input").each(function(i, obj){
+                if(obj.value == gender)
+                {
+                    obj.checked = true;
+                }
+            });
+        });
     </script>
     
     {% if form.errors.items() %}
-    <script>
-        $("#myModalEdit").modal('show');
-    </script>
+        <script>
+            $("#myModalEdit").modal('show');
+        </script>
     {% endif %}
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+        <script>
+            Toast.fire({
+                icon: "{{category}}",
+                title: "{{message}}"
+            });
+        </script>
+    {% endfor %}
 {% endblock js %}
