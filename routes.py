@@ -1,6 +1,5 @@
-import os
+import os, uuid
 from flask import flash, render_template, url_for, redirect, request, jsonify
-import flask_login
 from flask_login import current_user
 from flask_login.utils import login_user
 from app import app
@@ -8,7 +7,6 @@ from forms import UpdateAccountForm
 from models import User
 from werkzeug.utils import secure_filename
 
-import json
 
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 def allowed_file(filename):
@@ -26,7 +24,7 @@ def profile(username):
     user = User.get_by_username(username)
     if not user:
         return redirect('/404')
-    login_user(user)
+    # login_user(user)
     form = UpdateAccountForm()
     if request.method == 'POST':
         if form.validate_on_submit() and current_user.is_authenticated:
@@ -42,7 +40,7 @@ def profile(username):
 
                 file = form.picture.data
                 if file and file.filename !='' and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
+                    filename = str(uuid.uuid4().hex)+secure_filename(file.filename)
                     file.save(os.path.join(app.config['AVATAR_FOLDER'], filename))
                     user.avatar = 'images/avatars/'+filename
 
