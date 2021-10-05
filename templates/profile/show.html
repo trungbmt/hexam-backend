@@ -5,7 +5,7 @@
 {% endblock css %}
 {% block title %}{{title}}{% endblock title %}
 {% block content %}
-<div class="page-content page-container" id="page-content">
+<div class="page-content page-container container" id="page-content">
     <div class="padding">
         <div class="row container d-flex justify-content-center">
             <div class="col-xl-12 col-md-12">
@@ -14,10 +14,12 @@
                         <div class="col-sm-4 bg-c-lite-green user-profile">
                             <div class="card-block text-center text-white">
                                 <div class="m-b-25"> <img src="https://img.icons8.com/bubbles/100/000000/user.png" class="img-radius" alt="User-Profile-Image"> </div>
-                                <h4 class="f-w-600">{{ user['username'] }}</h4>
+                                <h4 class="f-w-600">{{ user['displayname'] or user['username'] }}</h4>
                                 <p>Web Designer</p>
-                                <button type="button" data-toggle="modal" data-target="#myModalEdit" class="tg-btn btn btn-info">Chỉnh sửa</button>
-                                <button type="button" class="btn btn-danger">Đăng xuất</button>
+                                {% if current_user.username == user['username'] %}
+                                    <button type="button" data-toggle="modal" data-target="#myModalEdit" class="tg-btn btn btn-info">Chỉnh sửa</button>
+                                    <button type="button" class="btn btn-danger">Đăng xuất</button>
+                                {% endif %}
                                 <!-- <button type="button" class="btn btn-success">Kết bạn</button>
                                 <button type="button" class="btn btn-primary">Nhắn tin</button> -->
                                 <div class="social-buttons mt-5"> <button class="neo-button"><i class="fa fa-facebook fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-linkedin fa-1x"></i></button> <button class="neo-button"><i class="fa fa-google fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-youtube fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-twitter fa-1x"></i> </button> </div>
@@ -54,11 +56,14 @@
                                 <!-- <div class="card-footer bg-white px-0 "> --><br>
                                     <h6 class="m-b-20 p-b-5 b-b-default f-w-600">Bạn bè</h6>
                                     <div class="row">
-                                        <div class="col-md-auto">
-                                              <button type="button" data-toggle="modal" data-target="#myModalFriendRequest" class="btn btn-outline-primary">
-                                                Xem lời mời kết bạn <span class="badge badge-danger">5</span>
-                                              </button>
-                                        </div>
+                                        
+                                        {% if current_user.username == user['username'] %}
+                                            <div class="col-md-auto">
+                                                <button type="button" data-toggle="modal" data-target="#myModalFriendRequest" class="btn btn-outline-primary">
+                                                    Xem lời mời kết bạn <span class="badge badge-danger">5</span>
+                                                </button>
+                                            </div>
+                                        {% endif %}
                                         <div class="col-md-auto ">
                                             <ul class="list-inline">
                                                 <li class="list-inline-item"> 
@@ -94,41 +99,86 @@
         
         <!-- Modal body -->
         <div class="modal-body">
-          <form action="" method="">
+          <form action="" method="POST">
+            {{ form.csrf_token }}
             <div class="form-group">
-              <label for="name">Họ và tên:</label>
-              <input type="text" class="form-control" placeholder="Nhập họ và tên" name="">
-            </div>
-            <div class="form-group">
-                <label for="exampleFormControlFile1">Ảnh đại diện:</label>
-                <input type="file" class="form-control-file" id="exampleFormControlFile1">
-            </div>
-            <div class="form-group">
-              <label for="email">Email:</label>
-              <input type="email" class="form-control" placeholder="Nhập Email email" name="email">
+                {{ form.displayname.label(class="form-control-label") }}
+                {{ form.displayname(class="form-control", placeholder="Nhập họ và tên", value=user.displayname or Blank) }}
+                {% for error in form.errors['displayname'] %}
+                    <div class="alert alert-danger">
+                        {{error}}
+                    </div>
+                {% endfor %}
             </div>
             <div class="form-group">
-              <label for="SĐT">Số điện thoại:</label>
-              <input type="text" class="form-control" placeholder="Nhập số điện thoại" name="">
+                {{ form.picture.label(class="form-control-label") }}
+                {{ form.picture(class="form-control-file", id="exampleFormControlFile1", accept="image/png, image/gif, image/jpeg") }}
+                {% for error in form.errors['picture'] %}
+                    <div class="alert alert-danger">
+                        {{error}}
+                    </div>
+                {% endfor %}
             </div>
-            <label for="SĐT">Giới tính:</label>
-            <div class="form-check-inline">
-              <label class="form-check-label">
-                <input type="radio" class="form-check-input" name="optradio">Nam
-              </label>
-            </div>
-            <div class="form-check-inline">
-              <label class="form-check-label">
-                <input type="radio" class="form-check-input" name="optradio">Nữ
-              </label>
-            </div></br>
-            <label for="SĐT">Ngày sinh:</label>
-            <input id="datepicker" width="276" />
             <div class="form-group">
-              <label for="address">Địa chỉ:</label>
-              <input type="text" class="form-control" placeholder="Nhập địa chỉ" name="">
+                {{ form.email.label(class="form-control-label") }}
+                {{ form.email(class="form-control", placeholder="Nhập email", value=user.email or Blank, readonly=True if user.email else False) }}
+                {% for error in form.errors['email'] %}
+                    <div class="alert alert-danger">
+                        {{error}}
+                    </div>
+                {% endfor %}
             </div>
-            <button type="submit" class="btn btn-primary">Cập nhật</button>
+            <div class="form-group">
+                {{ form.phone.label(class="form-control-label") }}
+                {{ form.phone(class="form-control", placeholder="Nhập số điện thoại", value=user.phone or Blank) }}
+                {% for error in form.errors['phone'] %}
+                    <div class="alert alert-danger">
+                        {{error}}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.gender.label(class="form-control-label") }}
+                <div class="form-check-inline">
+                  <label class="form-check-label">
+                    <input value="1" type="radio" class="form-check-input" name="gender">Nam
+                  </label>
+                </div>
+                <div class="form-check-inline">
+                  <label class="form-check-label">
+                    <input value="2" type="radio" class="form-check-input" name="gender">Nữ
+                  </label>
+                </div>
+                <div class="form-check-inline">
+                  <label class="form-check-label">
+                    <input value="0" type="radio" class="form-check-input" name="gender">Khác
+                  </label>
+                </div>
+                {% for error in form.errors['gender'] %}
+                    <div class="alert alert-danger">
+                        {{error}}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.dob.label(class="form-control-label") }}
+                {{ form.dob(id="datepicker", width="276") }}
+                {% for error in form.errors['dob'] %}
+                    <div class="alert alert-danger">
+                        {{error}}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.address.label(class="form-control-label") }}
+                {{ form.address(class="form-control", placeholder="Nhập địa chỉ", value=user.address or Blank) }}
+                {% for error in form.errors['address'] %}
+                    <div class="alert alert-danger">
+                        {{error}}
+                    </div>
+                {% endfor %}
+            </div>
+            {{ form.submit(class="btn btn-primary") }}
           </form>
         </div>
         
@@ -185,7 +235,7 @@
         
         <!-- Modal footer -->
         <div class="modal-footer">
-          <button type="button" class="btn btn-danger" data-dismiss="modal">Đóng</button>
+          <a type="button" onclick='$("#myModalEdit").hide();' class="btn btn-danger" data-dismiss="modal">Đóng</a>
         </div>
         
       </div>
@@ -291,4 +341,10 @@
             uiLibrary: 'bootstrap4'
         });
     </script>
+    
+    {% if form.errors.items() %}
+    <script>
+        $("#myModalEdit").modal('show');
+    </script>
+    {% endif %}
 {% endblock js %}

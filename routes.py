@@ -1,8 +1,11 @@
-from flask import flash, render_template, url_for, redirect, request
+from flask import flash, render_template, url_for, redirect, request, jsonify
 import flask_login
+from flask_login import current_user
+from flask_login.utils import login_user
 from app import app
 from forms import UpdateAccountForm
 from models import User
+import json
 
 @app.route("/")
 @app.route("/home")
@@ -11,17 +14,32 @@ def home():
 
 @app.route("/profile/<username>", methods=['GET', 'POST'])
 def profile(username):
+
+    user = User.get_by_username(username)
+    if not user:
+        return redirect('/404')
+        
+    form = UpdateAccountForm()
     if request.method == 'POST':
-        form = UpdateAccountForm()
-        pass
-    else:
-        user = User.get_by_username(username)
-        # if flask_login.current_user.is_authenticated:
-        if user:
-            return render_template('profile/show.html', 
-                title = username + " Profile",
-                user = user
-            )
-        else:
-            return redirect('/404')
+        if form.validate_on_submit() and current_user.is_authenticated:
+            if(user.username == current_user.username):
+                user.displayname = form.displayname.data
+                user.avatar = form.picture.data
+                user.phone = form.phone.data
+                user.dob = form.dob.data
+                user.gender = form.gender.data
+                user.address = form.address.data
+
+                if not user.email:
+                    user.email = form.email.data
+
+                user.update_to_mongo()
+                
+    # if flask_login.current_user.is_authenticated:
+
+    return render_template('profile/show.html', 
+        title = username + " Profile",
+        user = user,
+        form = form
+    )
 
