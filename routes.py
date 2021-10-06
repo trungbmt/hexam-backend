@@ -1,10 +1,14 @@
+from bson.json_util import loads, dumps
 import os, uuid
-from flask import flash, render_template, url_for, redirect, request, jsonify
+from flask import flash, json, render_template, url_for, redirect, request, jsonify
+from flask.helpers import send_from_directory
+from flask.wrappers import Response
 from flask_login import current_user
-from flask_login.utils import login_user
+import flask_login
+from flask_login.utils import login_required, login_user
 from app import app
 from forms import UpdateAccountForm
-from models import User
+from models import Friend, User
 from werkzeug.utils import secure_filename
 
 
@@ -24,7 +28,15 @@ def profile(username):
     user = User.get_by_username(username)
     if not user:
         return redirect('/404')
-    # login_user(user)
+
+    frship = None
+    pending = 0
+    if current_user.is_authenticated:
+        frship = Friend.get_by_friendship(current_user._id, user._id)
+        if current_user.username == user.username:
+            pending = Friend.count_pending(current_user._id)
+
+
     form = UpdateAccountForm()
     if request.method == 'POST':
         if form.validate_on_submit() and current_user.is_authenticated:
@@ -50,11 +62,34 @@ def profile(username):
                 
                 flash("Cập nhật thành công!", "success")
                 
-    # if flask_login.current_user.is_authenticated:
-
     return render_template('profile/show.html', 
         title = username + " Profile",
         user = user,
-        form = form
+        form = form,
+        frship = frship,
+        pending = pending
     )
+@app.route("/friends/pending")
+@login_required
+def get_friend_request():
+    list_request = Friend.get_by_receiver(current_user._id, 10)
+    for i in list_request:
+        i['sender'] = User.get_by_id(i['sender_id']).info()
+    return dumps(list_request)
 
+@app.route("/friends/<username>", methods=['POST'])
+@login_required
+def send_friend_request(username):
+
+    user = User.get_by_username(username)
+    if flask_login.current_user._id != user._id:
+        exits_frship = Friend.get_by_friendship(current_user._id, user._id)
+        if exits_frship is not None:
+            return Response(response="Không thể gửi lời mời kết bạn thêm nữa!", status=400)
+
+        if Friend.make_request(current_user._id, user._id):
+            return Response(response="Gửi lời mời kết bạn thành công!", status=200)
+    return Response(response="Gửi lời mời kết bạn thất bại!", status=400)
+
+
+        

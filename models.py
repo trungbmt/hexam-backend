@@ -1,6 +1,9 @@
 from bson.json_util import loads, dumps
 from bson.objectid import ObjectId
+from flask import url_for
+from flask.helpers import send_from_directory
 from flask.json import jsonify
+import pymongo
 from app import db
 from app import login_manager
 from flask_login import UserMixin
@@ -57,6 +60,21 @@ class User(UserMixin):
             return utils.check_password(password, verify_user.password)
         return False
 
+    def info(self):
+        return ({
+            "_id": str(self._id),
+            "name": self.displayname or self.username,
+            "username": self.username,
+            "email": self.email,
+            "displayname": self.displayname,
+            "phone": self.phone,
+            "fb_id": self.fb_id,
+            "gg_id": self.gg_id,
+            "dob": self.dob,
+            "avatar": self.avatar,
+            "address": self.address,
+            "gender": int(self.gender) if self.gender else None
+        })
     def json(self):
         return ({
             "_id": self._id,
@@ -73,3 +91,49 @@ class User(UserMixin):
             "gender": int(self.gender)
         })
 
+class Friend():
+    def __init__(self, sender_id, receiver_id, status, _id=None, created_at=None):
+        self.sender_id = sender_id
+        self.receiver_id = receiver_id
+        self.status = status
+        self._id = _id
+        self.created_at = created_at
+
+    def get_by_id(cls, _id):
+        data = db.friends.find_one({"_id": ObjectId(_id)})
+        if data is not None:
+            return cls(**data)
+
+    def count_pending(_id):
+        data = db.friends.find({"receiver_id": ObjectId(_id)}).sort('created_at',pymongo.DESCENDING).count()
+        return data
+
+    @classmethod
+    def make_request(cls, sender_id, receiver_id):
+        data = cls(sender_id, receiver_id, "pending")
+        return db.friends.insert_one(data.bson())
+    @classmethod
+    def get_by_receiver(cls, receiver_id, limit):
+        data = db.friends.find({"receiver_id": ObjectId(receiver_id)}).sort('created_at',pymongo.DESCENDING).limit(limit)
+        if data is not None:
+            return list(data)
+    
+    def get_by_friendship(receiver_id, sender_id):
+        data = db.friends.find_one({"$or":[ {"$and":[ {"sender_id":ObjectId(sender_id)}, {"receiver_id":ObjectId(receiver_id)}]}, {"$and":[ {"sender_id":ObjectId(receiver_id)}, {"receiver_id":ObjectId(sender_id)}]}]})
+        if data is not None:
+            return Friend(**data)
+
+    def json(self):
+        return ({
+            "_id": str(self._id),
+            "sender_id": str(self.sender_id),
+            "receiver_id": str(self.receiver_id),
+            "status": self.status,
+            "created_at": str(self.created_at)
+        })
+    def bson(self):
+        return {
+            "sender_id": ObjectId(self.sender_id),
+            "receiver_id": ObjectId(self.receiver_id),
+            "status": str(self.status)
+        }

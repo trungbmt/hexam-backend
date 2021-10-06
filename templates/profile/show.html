@@ -20,9 +20,20 @@
                                     <button type="button" data-toggle="modal" data-target="#myModalEdit" class="tg-btn btn btn-info">Chỉnh sửa</button>
                                     <a type="button" href="{{ url_for('auth.logout') }}" class="btn btn-danger">Đăng xuất</a>
                                 {% else %}
-                                
-                                    <button type="button" class="btn btn-success">Kết bạn</button>
-                                    <button type="button" class="btn btn-primary">Nhắn tin</button>
+                                    {% if not frship %}
+                                        {% if current_user.is_authenticated %}
+                                            <button id="send_request_btn" type="button" onclick="sendFriendRequest('{{ user['username'] }}')" class="btn btn-success">Kết bạn</button>
+                                        {% else %}
+                                            <a type="button" href="{{ url_for('auth.login') }}" class="btn btn-success">Kết bạn</a>
+                                        {% endif %}
+                                    {% elif frship.status.lower() == 'accepted' %}
+                                        <button type="button" class="btn btn-success">Bạn bè</button>
+                                        <button type="button" class="btn btn-primary">Nhắn tin</button>
+                                    {% elif frship.sender_id == current_user._id %}
+                                        <button type="button" class="btn btn-success">Đang chờ phản hồi</button>
+                                    {% elif frship.sender_id == user['_id'] %}
+                                        <button type="button" class="btn btn-success">Chấp nhận kết bạn</button>
+                                    {% endif %}
                                 {% endif %}
                                 <div class="social-buttons mt-5"> <button class="neo-button"><i class="fa fa-facebook fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-linkedin fa-1x"></i></button> <button class="neo-button"><i class="fa fa-google fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-youtube fa-1x"></i> </button> <button class="neo-button"><i class="fa fa-twitter fa-1x"></i> </button> </div>
                             </div>
@@ -72,7 +83,7 @@
                                         {% if current_user.username == user['username'] %}
                                             <div class="col-md-auto">
                                                 <button type="button" data-toggle="modal" data-target="#myModalFriendRequest" class="btn btn-outline-primary">
-                                                    Xem lời mời kết bạn <span class="badge badge-danger">5</span>
+                                                    Xem lời mời kết bạn <span class="badge badge-danger">{{ pending }}</span>
                                                 </button>
                                             </div>
                                         {% endif %}
@@ -98,6 +109,7 @@
         </div>
     </div>
 </div>
+{% if current_user.username == user['username'] %}
 <!-- MODAL EDIT -->
 <div class="modal" id="myModalEdit">
     <div class="modal-dialog">
@@ -216,33 +228,13 @@
         
         <!-- Modal body -->
         <div class="modal-body">
-                <div class="card p-3">
-                    <div class="d-flex align-items-center">
-                        <div class="image"> <img src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=500&q=80" class="rounded" width="155"> </div>
-                        <div class="ml-3 w-100">
-                            <h4 class="mb-0 mt-0">Tran Quoc Nguyen</h4> <span>Nam</span>
-                            <div class="button mt-2 d-flex flex-row align-items-center"> <button class="btn btn-sm btn-outline-success w-100">Đồng ý</button> <button class="btn btn-sm btn-danger w-100 ml-2">Hủy</button> </div>
-                        </div>
-                    </div>
+            <div id="friend_request_spinner" class="d-flex justify-content-center">
+                <div class="spinner-border" role="status">
+                  <span class="sr-only">Loading...</span>
                 </div>
-                <div class="card p-3">
-                    <div class="d-flex align-items-center">
-                        <div class="image"> <img src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=500&q=80" class="rounded" width="155"> </div>
-                        <div class="ml-3 w-100">
-                            <h4 class="mb-0 mt-0">Tran Quoc Nguyen</h4> <span>Nam</span>
-                            <div class="button mt-2 d-flex flex-row align-items-center"> <button class="btn btn-sm btn-outline-success w-100">Đồng ý</button> <button class="btn btn-sm btn-danger w-100 ml-2">Hủy</button> </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card p-3">
-                    <div class="d-flex align-items-center">
-                        <div class="image"> <img src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=500&q=80" class="rounded" width="155"> </div>
-                        <div class="ml-3 w-100">
-                            <h4 class="mb-0 mt-0">Tran Quoc Nguyen</h4> <span>Nam</span>
-                            <div class="button mt-2 d-flex flex-row align-items-center"> <button class="btn btn-sm btn-outline-success w-100">Đồng ý</button> <button class="btn btn-sm btn-danger w-100 ml-2">Hủy</button> </div>
-                        </div>
-                    </div>
-                </div>
+            </div>
+            <div id="friend_request">
+            </div>
         </div>
         
         <!-- Modal footer -->
@@ -253,7 +245,7 @@
       </div>
     </div>
 </div>
-
+{% endif %}
 <!-- MODAL friend list -->
 <div class="modal" id="myModalFriendList">
     <div class="modal-dialog modal-dialog-scrollable">
@@ -361,7 +353,93 @@
                     obj.checked = true;
                 }
             });
+            
+            $('#myModalFriendRequest').on('shown.bs.modal', function (e) {
+                $("#friend_request_spinner").removeClass('d-none');
+                $("#friend_request_spinner").addClass('d-flex');
+                $.ajax({
+                    url:"{{ url_for('get_friend_request') }}",
+                    method:"GET",
+                    success:function(data){ 
+                        $("#friend_request_spinner").addClass('d-none');
+                        $("#friend_request_spinner").removeClass('d-flex');
+                        if(data) {
+                            $("#friend_request").empty();
+                            $.each(JSON.parse(data), function(i, item) {
+                                render_friendRequest(item);
+                            });
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        console.log(xhr);
+                    }
+                });
+            })
         });
+        function render_friendRequest(data){
+            var gender;
+            if(data.sender.gender==1)
+                gender= "Nam"
+            else if(data.sender.gender==2)
+                gender= "Nữ"
+            else if(data.sender.gender==0)
+                gender= "Khác"
+            else gender= "Chưa đặt"
+
+            var url = "/profile/"+data.sender.username
+
+            var element = $('<div></div>').addClass("card p-3");
+
+            var div = $('<div></div>').addClass("d-flex align-items-center");
+
+            var image = $('<img src="/static/'+data.sender.avatar+'" class="rounded" width="155">');
+            var divImage = $('<a></a>')
+                        .addClass("image")
+                        .attr({"href": url})
+                        .append(image);
+
+
+            var divInfo = $('<div></div>').addClass("ml-3 w-100");
+
+            divEvent = $('<div></div>').addClass("button mt-2 d-flex flex-row align-items-center");
+            acceptButton = $('<button class="btn btn-sm btn-outline-success w-100">Đồng ý</button>');
+            denyButton = $('<button class="btn btn-sm btn-danger w-100 ml-2">Hủy</button>');
+
+            divEvent.append(acceptButton);
+            divEvent.append(denyButton);
+
+            divInfo.append($('<a class="text-decoration-none" href="'+url+'"><h4 class="mb-0 mt-0 text-dark">'+data.sender.name+'</h4></a> <span id="gender">'+gender+'</span>'));
+            divInfo.append(divEvent);
+
+            div.append(divImage);
+            div.append(divInfo);
+            element.append(div);
+
+            $("#friend_request").append(element);
+            
+        }
+        function sendFriendRequest(username){
+            $.ajax({
+                url:"{{ url_for('send_friend_request', username=user['username']) }}",
+                method:"POST",
+                success:function(data){ 
+                    if(data) {
+                        $("#send_request_btn").text("Đang chờ phản hồi")
+                        Toast.fire({
+                            icon: "success",
+                            title: data
+                        });
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    Toast.fire({
+                        icon: "error",
+                        title: xhr.responseText
+                    });
+                    console.log(xhr);
+                }
+            });
+        }
     </script>
     
     {% if form.errors.items() %}

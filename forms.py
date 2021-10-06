@@ -22,7 +22,7 @@ class LoginForm(FlaskForm):
 class UpdateAccountForm(FlaskForm):
     displayname = StringField('Họ và tên', validators=[DataRequired(), Length(min=5, max=50)])
     email = StringField('Địa chỉ email', validators=[DataRequired(), Email(message="Địa chỉ email không hợp lệ!")])
-    picture = FileField('Ảnh đại diện', validators=[FileAllowed(['png', 'jpg'], "Vui lòng chỉ chọn định dạng ảnh PNG hoặc JPG!")])
+    picture = FileField('Ảnh đại diện', validators=[FileAllowed(['png', 'jpg', 'gif'], "Vui lòng chỉ chọn định dạng ảnh PNG hoặc JPG!")])
     phone = StringField('Số điện thoại', validators=[Length(min=9, max=12)])
     address = StringField('Địa chỉ', validators=[Length(min=5, max=128)])
     dob = StringField('Ngày sinh', validators=[DataRequired()])
