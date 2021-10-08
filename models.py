@@ -99,13 +99,22 @@ class Friend():
         self._id = _id
         self.created_at = created_at
 
+    @classmethod
     def get_by_id(cls, _id):
         data = db.friends.find_one({"_id": ObjectId(_id)})
         if data is not None:
             return cls(**data)
 
     def count_pending(_id):
-        data = db.friends.find({"receiver_id": ObjectId(_id)}).sort('created_at',pymongo.DESCENDING).count()
+        data = db.friends.find({"receiver_id": ObjectId(_id), "status": "pending"}).sort('created_at',pymongo.DESCENDING).count()
+        return data
+    def count_friend(_id):
+        data = db.friends.find(
+            {"$and":[ 
+                {"$or":[ 
+                    {"sender_id":ObjectId(_id)}, 
+                    {"receiver_id":ObjectId(_id)}]}, 
+                {"status": "accepted"}]}).sort('created_at',pymongo.DESCENDING).count()
         return data
 
     @classmethod
@@ -113,15 +122,67 @@ class Friend():
         data = cls(sender_id, receiver_id, "pending")
         return db.friends.insert_one(data.bson())
     @classmethod
-    def get_by_receiver(cls, receiver_id, limit):
-        data = db.friends.find({"receiver_id": ObjectId(receiver_id)}).sort('created_at',pymongo.DESCENDING).limit(limit)
+    def get_friend_by_id(cls, _id, limit=0, offset=0, skip=0, scopeName=""):
+        data = db.friends.aggregate([
+            {"$lookup": {
+                "from": "users",
+                "localField": "sender_id",
+                "foreignField": "_id",
+                "as": "sender"
+            }},
+            {"$lookup": {
+                "from": "users",
+                "localField": "receiver_id",
+                "foreignField": "_id",
+                "as": "receiver"
+            }},
+            {"$match": {
+                "$and": [
+                    {"$or": [
+                        {"sender.username": { '$regex': '.*'+scopeName+'.*' }},
+                        {"receiver.username": { '$regex': '.*'+scopeName+'.*' }}
+                    ]},
+                    {"status": "accepted"},
+                    {"$or": [
+                        {"sender_id": _id},
+                        {"receiver_id": _id}
+                    ]}
+                ]
+                
+            }},
+            {"$project": {
+                "sender.password": 0,
+                "receiver.password": 0
+            }}
+        ])
+        if data is not None:
+            return list(data)
+
+    @classmethod
+    def get_request_by_receiver(cls, receiver_id, limit):
+        data = db.friends.find({"receiver_id": ObjectId(receiver_id), "status": "pending"}).sort('created_at',pymongo.DESCENDING).limit(limit)
         if data is not None:
             return list(data)
     
+    
     def get_by_friendship(receiver_id, sender_id):
-        data = db.friends.find_one({"$or":[ {"$and":[ {"sender_id":ObjectId(sender_id)}, {"receiver_id":ObjectId(receiver_id)}]}, {"$and":[ {"sender_id":ObjectId(receiver_id)}, {"receiver_id":ObjectId(sender_id)}]}]})
+        data = db.friends.find_one(
+            {"$or":[ 
+                {"$and":[ 
+                    {"sender_id":ObjectId(sender_id)}, 
+                    {"receiver_id":ObjectId(receiver_id)}]}, 
+                {"$and":[ 
+                    {"sender_id":ObjectId(receiver_id)}, 
+                    {"receiver_id":ObjectId(sender_id)}]}
+            ]})
         if data is not None:
             return Friend(**data)
+    
+    def update(self):
+        return db.friends.update_one({'_id': self._id}, {'$set': self.bson()})
+
+    def remove(self):
+        return db.friends.delete_one({'_id': self._id})
 
     def json(self):
         return ({

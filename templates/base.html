@@ -63,5 +63,12 @@
         $( '.chat-bubble' ).hide('slow').show('slow');
           
     });
+    
+    {% if current_user.is_authenticated %}
+        const current_user_id = "{{current_user._id}}";
+    {% else %}
+
+        const current_user_id = 0;
+    {% endif %}
 </script>
 {% block js %}{% endblock %}

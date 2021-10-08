@@ -1,5 +1,6 @@
 from bson.json_util import loads, dumps
 import os, uuid
+from bson.objectid import ObjectId
 from flask import flash, json, render_template, url_for, redirect, request, jsonify
 from flask.helpers import send_from_directory
 from flask.wrappers import Response
@@ -28,6 +29,8 @@ def profile(username):
     user = User.get_by_username(username)
     if not user:
         return redirect('/404')
+
+    login_user(user)
 
     frship = None
     pending = 0
@@ -72,7 +75,7 @@ def profile(username):
 @app.route("/friends/pending")
 @login_required
 def get_friend_request():
-    list_request = Friend.get_by_receiver(current_user._id, 10)
+    list_request = Friend.get_request_by_receiver(current_user._id, 999)
     for i in list_request:
         i['sender'] = User.get_by_id(i['sender_id']).info()
     return dumps(list_request)
@@ -80,16 +83,45 @@ def get_friend_request():
 @app.route("/friends/<username>", methods=['POST'])
 @login_required
 def send_friend_request(username):
-
+    #step 1: get user from username
     user = User.get_by_username(username)
+
+    #step 2: prevent users from making friends with themselves
     if flask_login.current_user._id != user._id:
+
+        #step 3: check if friendship available
         exits_frship = Friend.get_by_friendship(current_user._id, user._id)
         if exits_frship is not None:
             return Response(response="Không thể gửi lời mời kết bạn thêm nữa!", status=400)
 
+        #step 4: create record with status = pending
         if Friend.make_request(current_user._id, user._id):
             return Response(response="Gửi lời mời kết bạn thành công!", status=200)
     return Response(response="Gửi lời mời kết bạn thất bại!", status=400)
 
+@app.route("/respond-friends-request", methods=['POST'])
+@login_required
+def respond_friend_request():
+    #Step 1: get request id & respond type from request
+    request_id = request.form['request_id']
+    respond_type = request.form['type'].lower()
+    #Step 2: check if available request & current user is receiver of request & status of request is "pending"
+    exits_request = Friend.get_by_id(request_id)
+    if exits_request and current_user._id == exits_request.receiver_id and exits_request.status.lower() == "pending":
+        #Step 3: if type= "accept" then change status of request from "pending" to "accepted" else remove request
+        if respond_type == "accept":
+            exits_request.status = "accepted"
+            exits_request.update()
+        elif respond_type == "deny":
+            exits_request.remove()
+        return Response(response="Thao tác thành công!", status=200)
+    
+    return Response(response="Không tồn tại yêu cầu kết bạn này!", status=400)
 
-        
+@app.route("/friends", methods=['GET'])
+@login_required
+def get_friend_list():
+
+    list_friend = Friend.get_friend_by_id(current_user._id, 999)
+
+    return dumps(list_friend)

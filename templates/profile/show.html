@@ -83,7 +83,7 @@
                                         {% if current_user.username == user['username'] %}
                                             <div class="col-md-auto">
                                                 <button type="button" data-toggle="modal" data-target="#myModalFriendRequest" class="btn btn-outline-primary">
-                                                    Xem lời mời kết bạn <span class="badge badge-danger">{{ pending }}</span>
+                                                    Xem lời mời kết bạn <span class="badge badge-danger" id="pending_request_count">{{ pending }}</span>
                                                 </button>
                                             </div>
                                         {% endif %}
@@ -259,69 +259,36 @@
         
         <!-- Modal body -->
         <div class="modal-body" style="background: #e5e5e5;">
+            
+            <div id="friend_list_spinner" class="d-flex justify-content-center">
+                <div class="spinner-border" role="status">
+                  <span class="sr-only">Loading...</span>
+                </div>
+            </div>
             <div class="content">
                 <div class="container">
                     <!-- end row -->
-                    <div class="row">
-                        <div class="col-lg-4 card" style="background: white; border-radius: 10px;">
-                            <div class="text-center">
-                                <div class="member-card pt-2 pb-2">
-                                    <div class="thumb-lg member-thumb mx-auto"><img src="https://bootdey.com/img/Content/avatar/avatar2.png" class="rounded-circle img-thumbnail" alt="profile-image"></div>
-                                    <div class="">
-                                        <h4 class="name-design">Phạm Đức Trung</a></h4>
-                                        <p class="email-design text-muted">pdtrung@gmail.com</p>
-                                        <span><a href="#" class="text-pink">Trang cá nhân</a></span>
-                                    </div>
-                                    <ul class="social-links list-inline mt-2">
-                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Facebook"><i class="fa fa-facebook"></i></a></li>
-                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Twitter"><i class="fa fa-twitter"></i></a></li>
-                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Skype"><i class="fa fa-skype"></i></a></li>
-                                    </ul>
-                                    <button type="button" class="btn btn-primary btn-rounded waves-effect w-md waves-light"><i class='fab fa-facebook-messenger'></i></button></button>
-                                    <button type="button" class="btn btn-danger btn-rounded waves-effect w-md waves-light"><i class="fa fa-user-times"></i></button>
+                    
+                    <div id="friend_item" class="col-lg-4 card d-none" style="background: white; border-radius: 10px;">
+                        <div class="text-center">
+                            <div class="member-card pt-2 pb-2">
+                                <div class="thumb-lg member-thumb mx-auto"><img id="avatar_friend" src="https://bootdey.com/img/Content/avatar/avatar2.png" class="rounded-circle img-thumbnail" alt="profile-image"></div>
+                                <div class="">
+                                    <h4 id="name_friend" class="name-design">Phạm Đức Trung</a></h4>
+                                    <p id="email_friend" class="email-design text-muted">pdtrung@gmail.com</p>
+                                    <span><a id="link_friend" href="#" class="text-pink">Trang cá nhân</a></span>
                                 </div>
-                            </div>  
-                        </div>
-                        <!-- end col -->
-                        <div class="col-lg-4 card" style="background: white; border-radius: 10px;">
-                            <div class="text-center ">
-                                <div class="member-card pt-2 pb-2">
-                                    <div class="thumb-lg member-thumb mx-auto"><img src="https://bootdey.com/img/Content/avatar/avatar3.png" class="rounded-circle img-thumbnail" alt="profile-image"></div>
-                                    <div class="">
-                                        <h4 class="name-design">Pham Trần Triêm</h4>
-                                        <p class="email-design text-muted">pttriem@gmail.com></p>
-                                        <span><a href="#" class="text-pink">Trang cá nhân</a></span>
-                                    </div>
-                                    <ul class="social-links list-inline mt-2">
-                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Facebook"><i class="fa fa-facebook"></i></a></li>
-                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Twitter"><i class="fa fa-twitter"></i></a></li>
-                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Skype"><i class="fa fa-skype"></i></a></li>
-                                    </ul>
-                                    <button type="button" class="btn btn-primary btn-rounded waves-effect w-md waves-light"><i class='fab fa-facebook-messenger'></i></button></button>
-                                    <button type="button" class="btn btn-danger btn-rounded waves-effect w-md waves-light"><i class="fa fa-user-times"></i></button>
-                                </div>
+                                <ul class="social-links list-inline mt-2">
+                                    <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Facebook"><i class="fa fa-facebook"></i></a></li>
+                                    <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Twitter"><i class="fa fa-twitter"></i></a></li>
+                                    <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Skype"><i class="fa fa-skype"></i></a></li>
+                                </ul>
+                                <button type="button" class="btn btn-primary btn-rounded waves-effect w-md waves-light"><i class='fab fa-facebook-messenger'></i></button></button>
+                                <button type="button" class="btn btn-danger btn-rounded waves-effect w-md waves-light"><i class="fa fa-user-times"></i></button>
                             </div>
-                        </div>
-                        <!-- end col -->
-                        <div class="col-lg-4 card" style="background: white; border-radius: 10px;">
-                            <div class="text-center">
-                                <div class="member-card pt-2 pb-2">
-                                    <div class="thumb-lg member-thumb mx-auto"><img src="https://bootdey.com/img/Content/avatar/avatar4.png" class="rounded-circle img-thumbnail" alt="profile-image"></div>
-                                    <div class="">
-                                        <h4 class="name-design">Nguyễn Đăng Anh Tú</h4>
-                                        <p class="text-muted email-design">ndatu@gmail.com</p>
-                                        <span><a href="#" class="text-pink">Trang cá nhân</a></span>
-                                    </div>
-                                    <ul class="social-links list-inline mt-2">
-                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Facebook"><i class="fa fa-facebook"></i></a></li>
-                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Twitter"><i class="fa fa-twitter"></i></a></li>
-                                        <li class="list-inline-item"><a title="" data-placement="top" data-toggle="tooltip" class="tooltips" href="" data-original-title="Skype"><i class="fa fa-skype"></i></a></li>
-                                    </ul>
-                                    <button type="button" class="btn btn-primary btn-rounded waves-effect w-md waves-light"><i class='fab fa-facebook-messenger'></i></button></button>
-                                    <button type="button" class="btn btn-danger btn-rounded waves-effect w-md waves-light"><i class="fa fa-user-times"></i></button>
-                                </div>
-                            </div>
-                        </div>
+                        </div>  
+                    </div>
+                    <div id="friend_list" class="row">
                         <!-- end col -->
                     </div>
                 </div>
@@ -374,8 +341,48 @@
                         console.log(xhr);
                     }
                 });
-            })
+            });
+            $("#myModalFriendList").on('shown.bs.modal', function (e) {
+                $("#friend_list_spinner").removeClass('d-none');
+                $("#friend_list_spinner").addClass('d-flex');
+                $.ajax({
+                    url:"{{ url_for('get_friend_list') }}",
+                    method:"GET",
+                    success:function(data){ 
+                        $("#friend_list_spinner").addClass('d-none');
+                        $("#friend_list_spinner").removeClass('d-flex');
+                        if(data) {
+                            $("#friend_list").empty();
+                            $.each(JSON.parse(data), function(i, item) {
+                                render_friend(item);
+                            });
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        console.log(xhr);
+                    }
+                });
+            });
         });
+        function render_friend(data) {
+
+            var friend, friend_name;
+            if(data.sender[0]._id['$oid'] == current_user_id) {
+                friend= data.receiver[0];
+            } else {
+                friend = data.sender[0];
+            }
+
+            var element = $("#friend_item").clone();
+            $(element).removeClass("d-none");
+
+            $(element).find("#name_friend").text(friend_name);
+            $(element).find("#email_friend").text(friend.email);
+            $(element).find("#link_friend").attr("href", "/profile/"+friend.displayname);
+            $(element).find("#avatar_friend").attr("src", "/static/"+friend.avatar);
+
+            $("#friend_list").append(element);
+        }
         function render_friendRequest(data){
             var gender;
             if(data.sender.gender==1)
@@ -388,7 +395,7 @@
 
             var url = "/profile/"+data.sender.username
 
-            var element = $('<div></div>').addClass("card p-3");
+            var element = $('<div id='+ data._id['$oid'] +'></div>').addClass("card p-3");
 
             var div = $('<div></div>').addClass("d-flex align-items-center");
 
@@ -402,8 +409,8 @@
             var divInfo = $('<div></div>').addClass("ml-3 w-100");
 
             divEvent = $('<div></div>').addClass("button mt-2 d-flex flex-row align-items-center");
-            acceptButton = $('<button class="btn btn-sm btn-outline-success w-100">Đồng ý</button>');
-            denyButton = $('<button class="btn btn-sm btn-danger w-100 ml-2">Hủy</button>');
+            acceptButton = $('<button onclick="respond_request(this)" data-type="accept" data-id='+ data._id['$oid'] +' class="btn btn-sm btn-outline-success w-100">Đồng ý</button>');
+            denyButton = $('<button onclick="respond_request(this)" data-type="deny" data-id='+ data._id['$oid'] +' class="btn btn-sm btn-danger w-100 ml-2">Hủy</button>');
 
             divEvent.append(acceptButton);
             divEvent.append(denyButton);
@@ -429,6 +436,32 @@
                             icon: "success",
                             title: data
                         });
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    Toast.fire({
+                        icon: "error",
+                        title: xhr.responseText
+                    });
+                    console.log(xhr);
+                }
+            });
+        }
+        function respond_request(element){
+            var request_id = $(element).data("id");
+            var type = $(element).data("type");
+            
+            $.ajax({
+                url:"{{ url_for('respond_friend_request') }}",
+                method:"POST",
+                data: {"request_id": request_id, "type": type},
+                success:function(data){ 
+                    if(data) {
+                        $("#"+request_id).remove();
+                        let count_pending = parseInt($("#pending_request_count").text());
+                        if (count_pending>0) {
+                            $("#pending_request_count").text(count_pending-1)
+                        }
                     }
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
