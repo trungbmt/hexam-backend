@@ -366,7 +366,7 @@
         });
         function render_friend(data) {
 
-            var friend, friend_name;
+            var friend;
             if(data.sender[0]._id['$oid'] == current_user_id) {
                 friend= data.receiver[0];
             } else {
@@ -376,9 +376,9 @@
             var element = $("#friend_item").clone();
             $(element).removeClass("d-none");
 
-            $(element).find("#name_friend").text(friend_name);
+            $(element).find("#name_friend").text(friend.displayname);
             $(element).find("#email_friend").text(friend.email);
-            $(element).find("#link_friend").attr("href", "/profile/"+friend.displayname);
+            $(element).find("#link_friend").attr("href", "/profile/"+friend.username);
             $(element).find("#avatar_friend").attr("src", "/static/"+friend.avatar);
 
             $("#friend_list").append(element);

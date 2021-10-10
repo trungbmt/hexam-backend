@@ -1,3 +1,4 @@
+from datetime import datetime
 from bson.json_util import loads, dumps
 from bson.objectid import ObjectId
 from flask import url_for
@@ -10,7 +11,7 @@ from flask_login import UserMixin
 import utils
 
 class User(UserMixin):
-    def __init__(self, _id, username, email, password, displayname=None, gender=None, phone=None, address=None, fb_id=None, gg_id=None, dob=None, avatar="images/default_avatar.png"):
+    def __init__(self, _id, username, email, password, displayname=None, gender=None, phone=None, address=None, fb_id=None, gg_id=None, dob=None, avatar="images/default_avatar.png", created_at= datetime.now()):
         self._id = _id
         self.username = username
         self.email = email
@@ -23,6 +24,7 @@ class User(UserMixin):
         self.avatar = avatar
         self.address = address
         self.gender = gender
+        self.created_at = created_at
         
     def is_authenticated():
         return True
@@ -88,11 +90,12 @@ class User(UserMixin):
             "dob": self.dob,
             "avatar": self.avatar,
             "address": self.address,
-            "gender": int(self.gender)
+            "gender": int(self.gender),
+            "created_at": self.created_at
         })
 
 class Friend():
-    def __init__(self, sender_id, receiver_id, status, _id=None, created_at=None):
+    def __init__(self, sender_id, receiver_id, status, _id=None, created_at=datetime.now()):
         self.sender_id = sender_id
         self.receiver_id = receiver_id
         self.status = status
@@ -196,5 +199,6 @@ class Friend():
         return {
             "sender_id": ObjectId(self.sender_id),
             "receiver_id": ObjectId(self.receiver_id),
-            "status": str(self.status)
+            "status": str(self.status),
+            "created_at": self.created_at
         }

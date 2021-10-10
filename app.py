@@ -4,13 +4,18 @@ from config import Config
 from flask_pymongo import MongoClient
 from flask_wtf.csrf import CSRFProtect
 from flask_login import LoginManager, login_manager
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
 app.config.from_object(Config)
+socketio = SocketIO(app)
+import socket_app
+
 csrf = CSRFProtect(app)
 
 mongodb_client = MongoClient("mongodb+srv://trungbmt:hncUKt3dhGya00ko@cluster0.nspaq.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 db = mongodb_client.hexam
+
 
 import routes
 from auth import auth

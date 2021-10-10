@@ -12,6 +12,10 @@ from forms import UpdateAccountForm
 from models import Friend, User
 from werkzeug.utils import secure_filename
 
+from local_models.conversation import Conversation
+from local_models.messages import Messages
+from local_models.participants import Paticipants
+
 
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 def allowed_file(filename):
@@ -21,7 +25,18 @@ def allowed_file(filename):
 @app.route("/")
 @app.route("/home")
 def home():
+    login_user(User.get_by_username("phamductrungbmt"))
     return render_template('home.html', title="Trang chủ")
+
+@app.route("/messages")
+def messages():
+    login_user(User.get_by_username("phamductrungbmt"))
+    list_conversation = Conversation.get_list_conversation(current_user._id)
+    return render_template('home.html', 
+        title="Trang chủ", 
+        list_conversation=list_conversation
+    )
+
 
 @app.route("/profile/<username>", methods=['GET', 'POST'])
 def profile(username):
@@ -30,7 +45,6 @@ def profile(username):
     if not user:
         return redirect('/404')
 
-    login_user(user)
 
     frship = None
     pending = 0
@@ -125,3 +139,11 @@ def get_friend_list():
     list_friend = Friend.get_friend_by_id(current_user._id, 999)
 
     return dumps(list_friend)
+
+@app.route("/socket", methods=['GET'])
+def socket():
+    return render_template("socket.html")
+
+@app.route("/get_list_conversation/<id_user>")
+def get_list_conversation(id_user):
+    return dumps(Conversation.get_list_conversation(id_user))
