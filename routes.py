@@ -1,3 +1,4 @@
+from bson import json_util
 from bson.json_util import loads, dumps
 import os, uuid
 from bson.objectid import ObjectId
@@ -7,15 +8,15 @@ from flask.wrappers import Response
 from flask_login import current_user
 import flask_login
 from flask_login.utils import login_required, login_user
-from app import app
+from app import app, db
 from forms import UpdateAccountForm
 from models import Friend, User
 from werkzeug.utils import secure_filename
 
 from local_models.conversation import Conversation
 from local_models.messages import Messages
-from local_models.participants import Paticipants
-
+from local_models.participants import Participants
+from socket_app import sendMessageTo
 
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 def allowed_file(filename):
@@ -28,9 +29,23 @@ def home():
     login_user(User.get_by_username("phamductrungbmt"))
     return render_template('home.html', title="Trang chủ")
 
+@app.route("/phamductrungbmt")
+def login_trung():
+    login_user(User.get_by_username("phamductrungbmt"))
+    return redirect('messages')
+
+@app.route("/tqnguyen")
+def login_nguyen():
+    login_user(User.get_by_username("tqnguyen"))
+    return redirect('/messages')
+
+@app.route("/triemqn")
+def login_triem():
+    login_user(User.get_by_username("triemqn"))
+    return redirect('/messages')
+
 @app.route("/messages")
 def messages():
-    login_user(User.get_by_username("phamductrungbmt"))
     list_conversation = Conversation.get_list_conversation(current_user._id)
     return render_template('home.html', 
         title="Trang chủ", 
@@ -140,10 +155,50 @@ def get_friend_list():
 
     return dumps(list_friend)
 
+@app.route("/get_messages/<id_conversation>", methods=['POST'])
+@login_required
+def get_messages(id_conversation):
+    conversation = Conversation.get_by_id(id_conversation)
+
+    if conversation and conversation.has_user(current_user._id):
+        list_message = Messages.get_list_message(id_conversation)
+        return dumps(list_message)
+    return "Bạn không có quyền truy cập vào cuộc trò truyện này!", 401
+
+@app.route("/send_message/<id_conversation>", methods=['POST'])
+@login_required
+def send_message(id_conversation):
+    conversation = Conversation.get_by_id(id_conversation)
+
+    if conversation and conversation.has_user(current_user._id):
+        data = {
+            "sender_id": current_user._id,
+            "conversation_id": conversation._id,
+            "message": request.form['message'],
+            "message_type": conversation.type,
+        }
+        message = Messages(**data)
+        result = message.insert()
+        if result is not None:
+            message_inserted = Messages.get_message_and_sender(result.inserted_id)
+            json_mess = json.loads(json_util.dumps(message_inserted))
+
+            participants = Participants.get_by_conversation(id_conversation)
+            for participant in participants:
+                sendMessageTo(participant['user_id'], json_mess)
+            return "success", 200
+    return "failed", 400
+        
+
 @app.route("/socket", methods=['GET'])
 def socket():
     return render_template("socket.html")
 
+########## TEST AREA ########################
 @app.route("/get_list_conversation/<id_user>")
 def get_list_conversation(id_user):
     return dumps(Conversation.get_list_conversation(id_user))
+
+@app.route("/get_list_message/<id_conversation>")
+def get_list_message(id_conversation):
+    return dumps(Messages.get_list_message(id_conversation))

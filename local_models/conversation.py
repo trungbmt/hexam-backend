@@ -1,35 +1,59 @@
 from bson.objectid import ObjectId
 from app import db
+from datetime import datetime
 
 
 class Conversation:
-    def __init__(self, title, type, _id=None, moderator_id= None, channel_id = None, created_at = None):
+    def __init__(self, title, type, _id=None, moderator_id= None, channel_id = None):
         self.title = title
         self.type = type
         self.moderator_id = moderator_id
         self._id = _id
         self.channel_id = channel_id
-        self.created_at = created_at
     
     @classmethod
     def get_by_id(cls, _id):
-        data = db.conversation.find_one({"_id", ObjectId(_id)})
+        data = db.conversation.find_one({"_id": ObjectId(_id)})
         if data is not None:
             return cls(**data)
-    
+
+    def has_user(self, user_id):
+        has_user = db.participants.find_one({"conversation_id": self._id, "user_id": user_id})
+        print(has_user)
+        if has_user is not None:
+            return True
+        return False
+
     @classmethod
     def get_list_conversation(cls, user_id):
         data = db.messages.aggregate([
-            {"$sort": {"created_at": -1}},
+            {"$sort": {"_id": -1}},
             {"$group": 
                 {
                     "_id": "$conversation_id",
+                    "message_id": {"$first": "$_id"},
                     "sender_id": {"$first": "$sender_id"},
                     "message": {"$first": "$message"},
                     "message_type": {"$first": "$message_type"},
-                    "created_at": {"$first": "$created_at"},
                     "conversation_id": {"$first": "$conversation_id"},
                 }
+            },
+            {"$lookup": {
+                "from": "participants",
+                "as": "myParticipant",
+                "let": {"conversation_id": "$conversation_id"},
+                "pipeline": [
+                    {"$match": {
+                        "$and": [
+                            {"$expr": {"$eq": ["$conversation_id", "$$conversation_id"]}},
+                            {"$expr": {"$eq": ["$user_id", ObjectId(user_id)]}},
+                        ]
+                    }}
+                ]
+            }},
+            {"$unwind":"$myParticipant"},
+            {"$match": 
+                {"myParticipant": {"$exists": "true"}}
             },
             {"$lookup":
                 {
@@ -56,47 +80,29 @@ class Conversation:
                         {"$match": {
                             "$and": [
                                 {"$expr": {"$eq": ["$conversation_id", "$$conversation_id"]}},
-                                {"$expr": {"$eq": ["$user_id", "$$sender_id"]}},
+                                {"$expr": {"$ne": ["$user_id", ObjectId(user_id)]}},
                             ]
-                        }}
-                    ]
-                }
-            },
-            {"$sort": {"created_at": -1}},
-            {"$unwind":"$sender"},
-            {"$unwind":"$conversation"},
-            {"$unwind":"$participant"}
-        ])
-        return list(data)
-
-        data = db.participants.aggregate([
-            {"$match":
-                {
-                    "user_id": ObjectId(user_id)
-                }
-            },
-            {"$lookup":
-                {
-                    "from": "conversation",
-                    "localField": "conversation_id",
-                    "foreignField": "_id",
-                    "as": "conversation"
-                }
-            },
-            {"$lookup":
-                {
-                    "from": "messages",
-                    "let": {"conversation_id":"conversation_id"},
-                    "as": "messages",
-                    "pipeline": [
-                        {"$sort": {
-                            "created_at": -1
                         }},
                         {"$limit": 1},
+                        {"$lookup":
+                            {
+                                "from": "users",
+                                "localField": "user_id",
+                                "foreignField": "_id",
+                                "as": "user"
+                            }
+                        },
+                        {"$unwind":"$user"},
                     ]
                 }
-            }
+            },
+            {"$project": {
+                "sender.password": 0,
+            }},
+            {"$sort": {"message_id": -1}},
+            {"$unwind":"$sender"},
+            {"$unwind":"$participant"},
+            {"$unwind":"$conversation"},
         ])
-        if data is not None:
-            return list(data)
+        return list(data)
     

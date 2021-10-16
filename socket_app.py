@@ -1,8 +1,33 @@
+from bson.objectid import ObjectId
 from app import socketio
 from flask_socketio import send, emit
 from flask_socketio import join_room, leave_room
 import flask_login
+from flask import request
 
+clients = dict()
+
+def sendMessageTo(user_id, data):
+    
+    if str(user_id) in clients:
+        sid = clients[str(user_id)]
+        socketio.emit("chat message", data, room=sid)
+        print("SEND MESSAGE SUCCESS")
+
+@socketio.on('connect')
+def on_connect():
+    if flask_login.current_user.is_authenticated:
+        user_id = str(flask_login.current_user._id)
+        clients[user_id] = request.sid
+    print("Current Clients: ")
+    print(clients)
+@socketio.on('disconnect')
+def on_disconnect():
+    if flask_login.current_user.is_authenticated:
+        user_id = flask_login.current_user._id
+        del clients[str(user_id)]
+    print("Current Clients: ")
+    print(clients)
 
 @socketio.on('join')
 def on_join(data):

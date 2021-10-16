@@ -21,30 +21,37 @@
             <input placeholder="Search here" type="text">
           </div>
         </div>
-        {% for conversation in list_conversation %}
-          <div class="friend-drawer friend-drawer--onhover">
-            <img class="profile-image" src="{{url_for('static', filename=conversation.sender.avatar)}}" alt="">
-            <div class="text">
+        <div id="conversation_list"> 
+          {% for conversation in list_conversation %}
+            <div id="c_{{ conversation.conversation_id }}" onclick="change_conversation(this)" data-conversation="{{ conversation.conversation_id }}" class="friend-drawer friend-drawer--onhover">
               {% if conversation.conversation.type.lower() == "private" %}
-                <h6>{{ conversation.participant.title }}</h6>
-                <p class="text-muted">{{ conversation.message }}</p>
+                <img id="conversation_image" class="profile-image" src="{{url_for('static', filename=conversation.participant.user.avatar)}}" alt="">
               {% else %}
-                <h6>{{ conversation.conversation.title }}</h6>
-                <p class="text-muted"><strong>{{ conversation.participant.title }}</strong>: {{ conversation.message }}</p>
+                <img id="conversation_image" class="profile-image" src="{{url_for('static', filename=conversation.sender.avatar)}}" alt="">
               {% endif %}
+              <div class="text">
+                {% if conversation.conversation.type.lower() == "private" %}
+                  <h6 id="conversation_title">{{ conversation.participant.title }}</h6>
+                  <p id="conversation_message" style="overflow: hidden; text-overflow: ellipsis;" class="text-muted">{{ conversation.message }}</p>
+                {% else %}
+                  <h6 id="conversation_title">{{ conversation.conversation.title }}</h6>
+                  <p id="conversation_message" style="overflow: hidden; text-overflow: ellipsis;" class="text-muted"><strong>{{ conversation.sender.displayname }}</strong>: {{ conversation.message }}</p>
+                {% endif %}
+              </div>
+              <span class="time text-muted small my-auto">{{ conversation._id.generation_time }}</span>
+              <i id="badge_message" class="fas fa-circle text-danger ml-auto mb-auto"></i>
             </div>
-            <span class="time text-muted small">{{ conversation.created_at.as_datetime().strftime("%H:%M:%S, %m/%d/%Y") }}</span>
-          </div>
-          <hr>
-        {% endfor %}
+            <hr>
+          {% endfor %}
+        </div>
       </div>
       <div class="col-md-8">
         <div class="settings-tray">
-            <div class="friend-drawer no-gutters friend-drawer--grey">
-            <img class="profile-image" src="https://www.clarity-enhanced.net/wp-content/uploads/2020/06/robocop.jpg" alt="">
+            <div id="conversation_item" class="friend-drawer no-gutters friend-drawer--grey">
+            <img id="chatter_avatar" class="profile-image" src="https://www.clarity-enhanced.net/wp-content/uploads/2020/06/robocop.jpg" alt="">
             <div class="text">
-              <h6>Robo Cop</h6>
-              <p class="text-muted">Layin' down the law since like before Christ...</p>
+              <h6 id="chatter_displayname">Robo Cop</h6>
+              <p id="chatter_status" class="text-muted">Online...</p>
             </div>
             <span class="settings-tray--right">
               <i class="material-icons">cached</i>
@@ -53,63 +60,17 @@
             </span>
           </div>
         </div>
-        <div class="chat-panel">
-          <div class="row no-gutters">
-            <div class="col-md-3">
-              <div class="chat-bubble chat-bubble--left">
-                Hello dude!
-              </div>
-            </div>
-          </div>
-          <div class="row no-gutters">
-            <div class="col-md-3 offset-md-9">
-              <div class="chat-bubble chat-bubble--right">
-                Hello dude!
-              </div>
-            </div>
-          </div>
-          <div class="row no-gutters">
-            <div class="col-md-3 offset-md-9">
-              <div class="chat-bubble chat-bubble--right">
-                Hello dude!
-              </div>
-            </div>
-          </div>
-          <div class="row no-gutters">
-            <div class="col-md-3">
-              <div class="chat-bubble chat-bubble--left">
-                Hello dude!
-              </div>
-            </div>
-          </div>
-          <div class="row no-gutters">
-            <div class="col-md-3">
-              <div class="chat-bubble chat-bubble--left">
-                Hello dude!
-              </div>
-            </div>
-          </div>
-          <div class="row no-gutters">
-            <div class="col-md-3">
-              <div class="chat-bubble chat-bubble--left">
-                Hello dude!
-              </div>
-            </div>
-          </div>
-          <div class="row no-gutters">
-            <div class="col-md-3 offset-md-9">
-              <div class="chat-bubble chat-bubble--right">
-                Hello dude!
-              </div>
-            </div>
+        <div>
+          <div class="chat-panel" id="message_list" style="height: 60vh; overflow: scroll;">
+            
           </div>
           <div class="row">
             <div class="col-12">
               <div class="chat-box-tray">
                 <i class="material-icons">sentiment_very_satisfied</i>
-                <input type="text" placeholder="Type your message here...">
+                <input id="message_input" type="text" placeholder="Type your message here...">
                 <i class="material-icons">mic</i>
-                <i class="material-icons">send</i>
+                <i onclick="send_message()" class="material-icons">send</i>
               </div>
             </div>
           </div>
@@ -122,9 +83,110 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
 <script type="text/javascript" charset="utf-8">
-    var socket = io();
-    socket.on('connect', function() {
-      console.log("Socket connected");
+  var spinner = $('<div id="messages_spinner" class="d-flex justify-content-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></div>');
+  
+  $( document ).ready(function() {
+  });
+  function change_conversation(element){
+    let conversation_name = $(element).find("#conversation_title").text();
+    let img_src = $(element).find("#conversation_image").attr("src");
+    let id_conversation = $(element).data("conversation");
+
+    $("#chatter_displayname").text(conversation_name);
+    $("#chatter_avatar").attr("src", img_src);
+    $("#message_list").append(spinner);
+    $("#conversation_item").data("conversation", id_conversation);
+    $(element).find("#badge_message").addClass("d-none");
+    $(element).find("#conversation_message").removeClass("font-weight-bold");
+    $.ajax({
+      url:"/get_messages/"+id_conversation,
+      method:"POST",
+      success:function(data){ 
+          if(data) {
+              $("#message_list").empty();
+              var element = $("#message_list");
+              $.each(JSON.parse(data), function(i, item) {
+                prepend_message(item);
+              });
+          }
+      },
+      error: function (xhr, ajaxOptions, thrownError) {
+          console.log(xhr);
+      }
     });
+
+
+  }
+  function prepend_message(data) {
+    let message = data['message'];
+    let chat_bubble_direction, offset
+    if(data.sender_id['$oid'] == current_user_id) {
+      chat_bubble_direction = "chat-bubble--right"
+      offset = "ml-auto"
+    } else {
+      chat_bubble_direction = "chat-bubble--left"
+    }
+
+    let item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div class="'+offset+'"><div class="chat-bubble '+chat_bubble_direction+'">'+message+'</div></div></div>');
+
+    console.log(data);
+    $("#message_list").prepend(item)
+    $('#message_list').scrollTop($('#message_list')[0].scrollHeight);
+  }
+  function append_message(data) {
+    let message = data['message'];
+    let chat_bubble_direction, offset
+    if(data.sender_id['$oid'] == current_user_id) {
+      chat_bubble_direction = "chat-bubble--right"
+      offset = "ml-auto"
+    } else {
+      chat_bubble_direction = "chat-bubble--left"
+    }
+    
+    let item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div class="'+offset+'"><div class="chat-bubble '+chat_bubble_direction+'">'+message+'</div></div></div>');
+
+    $("#message_list").append(item)
+    $('#message_list').scrollTop($('#message_list')[0].scrollHeight);
+  }
+  var socket = io();
+  socket.on('connect', function() {
+    console.log("Socket connected");
+    socket.on('chat message', (msg) => {
+        $("#conversation_list").find("#c_"+msg.conversation_id['$oid']).find("#conversation_message").text(msg.message)
+        if($("#conversation_item").data("conversation") == msg.conversation_id['$oid']){
+            append_message(msg);
+        } else {
+          
+          if(msg.sender_id['$oid'] != current_user_id) {
+            $("#conversation_list").find("#c_"+msg.conversation_id['$oid']).find("#conversation_message").addClass("font-weight-bold");
+            $("#conversation_list").find("#c_"+msg.conversation_id['$oid']).find("#badge_message").removeClass("d-none");
+          }
+        }
+    });
+  });
+  function send_message(){
+    let conversation_id = $("#conversation_item").data("conversation");
+    var data = [];
+    data['message'] = $("#message_input").val();
+    data['sender_id'] = [];
+    data['sender_id']['$oid'] = current_user_id;
+    
+    $.ajax({
+      url:"/send_message/"+conversation_id,
+      method:"POST",
+      data: {"message": data['message']},
+      success:function(data){ 
+          if(data) {
+              console.log(data)
+          }
+      },
+      error: function (xhr, ajaxOptions, thrownError) {
+          console.log(xhr);
+      }
+    });
+
+
+    $("#message_input").val("");
+  }
 </script>
 {% endblock js %}

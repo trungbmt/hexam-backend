@@ -50,6 +50,9 @@
             toast.addEventListener('mouseleave', Swal.resumeTimer)
         }
     });
+    function dateFromObjectId (objectId) {
+        return new Date(parseInt(objectId.substring(0, 8), 16) * 1000);
+    };
     var csrftoken = $('meta[name=csrf-token]').attr('content')
     $.ajaxSetup({
         beforeSend: function(xhr, settings) {
