@@ -29,6 +29,12 @@ class Messages():
                 "foreignField": "_id",
                 "as": "sender"
             }},
+            {"$lookup": {
+                "from": "attachment",
+                "localField": "_id",
+                "foreignField": "message_id",
+                "as": "attachment"
+            }},
             {"$match": {
                 "conversation_id": ObjectId(conversation_id)
             }},
@@ -36,6 +42,12 @@ class Messages():
                 "sender.password": 0
             }},
             {"$unwind":"$sender"},
+            {"$unwind":
+                {
+                    "path": "$attachment",
+                    "preserveNullAndEmptyArrays": True
+                }
+            },
         ])
         if data is not None:
             return list(data)
@@ -55,7 +67,26 @@ class Messages():
                 "foreignField": "_id",
                 "as": "sender"
             }},
+            {"$lookup": {
+                "from": "attachment",
+                "localField": "_id",
+                "foreignField": "message_id",
+                "as": "attachment"
+            }},
+            {"$lookup": {
+                "from": "conversation",
+                "localField": "conversation_id",
+                "foreignField": "_id",
+                "as": "conversation"
+            }},
             {"$unwind":"$sender"},
+            {"$unwind":"$conversation"},
+            {"$unwind":
+                {
+                    "path": "$attachment",
+                    "preserveNullAndEmptyArrays": True
+                }
+            },
         ]).next()
         
         return message_inserted

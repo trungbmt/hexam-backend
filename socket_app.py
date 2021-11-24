@@ -6,41 +6,58 @@ import flask_login
 from flask import request
 
 clients = dict()
+peers = dict()
 
 def sendMessageTo(user_id, data):
     
-    if str(user_id) in clients:
-        sid = clients[str(user_id)]
-        socketio.emit("chat message", data, room=sid)
-        print("SEND MESSAGE SUCCESS")
+    socketio.emit("chat message", data, to=str(user_id))
+    print("SEND MESSAGE SUCCESS" + str(user_id))
+    # if str(user_id) in clients:
+    #     sid = clients[str(user_id)]
+    #     socketio.emit("chat message", data, room=sid)
+    #     print("SEND MESSAGE SUCCESS")
 
 @socketio.on('connect')
 def on_connect():
     if flask_login.current_user.is_authenticated:
         user_id = str(flask_login.current_user._id)
-        clients[user_id] = request.sid
-    print("Current Clients: ")
-    print(clients)
+        join_room(user_id)
+        print("join room:" +user_id)
+        # clients[user_id] = request.sid
+    # print("Current Clients: ")
+    # print(clients)
+
 @socketio.on('disconnect')
 def on_disconnect():
     if flask_login.current_user.is_authenticated:
         user_id = flask_login.current_user._id
-        del clients[str(user_id)]
-    print("Current Clients: ")
-    print(clients)
+        leave_room(user_id)
+        # del clients[str(user_id)]
+    # print(request.sid + " disconnected")
+    # print("Current Clients: ")
+    # print(clients)
 
 @socketio.on('join')
-def on_join(data):
-    username = data['username']
-    room = data['room']
+def on_join(room, peerId):
     join_room(room)
-    send(username + ' has entered the room.', to=room)
+    print(peerId + ' has entered the room {}.'.format(room))
+    emit('user-connected', peerId, to=room)
+    peers[request.sid] = peerId
+
+    @socketio.on('disconnect')
+    def disconnect_room():
+        leave_room(room)
+        if request.sid in peers:
+            peerId2 = peers[request.sid]
+            emit('user-disconnected', peerId2, to=room)
+            print(peerId2 + ' has left the room {}.'.format(room))
+            del peers[request.sid]
+
 @socketio.on('leave')
-def on_leave(data):
-    username = data['username']
-    room = data['room']
+def on_leave(room, peerId):
     leave_room(room)
-    send(username + ' has left the room.', to=room)
+    emit('user-disconnected', peerId, to=room)
+    print(peerId + ' has left2 the room {}.'.format(room))
 
 @socketio.on('message')
 def handle_message(data):

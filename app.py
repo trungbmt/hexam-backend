@@ -8,7 +8,7 @@ from flask_socketio import SocketIO
 
 app = Flask(__name__)
 app.config.from_object(Config)
-socketio = SocketIO(app)
+socketio = SocketIO(app, ping_timeout=2, ping_interval=10)
 import socket_app
 
 csrf = CSRFProtect(app)

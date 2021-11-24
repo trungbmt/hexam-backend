@@ -139,11 +139,27 @@ class Friend():
                 "foreignField": "_id",
                 "as": "receiver"
             }},
+            {"$project": {
+                "_id": 1,
+                "sender_id": 1,
+                "receiver_id": 1,
+                "sender": 1,
+                "receiver": 1,
+                "status": 1,
+                "friend_info": {
+                    "$switch": {
+                        "branches": [
+                            { "case": { "$eq": [ "$sender_id", ObjectId(_id) ] }, "then": "$receiver" },
+                            { "case": { "$eq": [ "$receiver_id", ObjectId(_id) ] }, "then": "$sender" }
+                        ]
+                    }
+                }
+            }},
             {"$match": {
                 "$and": [
                     {"$or": [
-                        {"sender.username": { '$regex': '.*'+scopeName+'.*' }},
-                        {"receiver.username": { '$regex': '.*'+scopeName+'.*' }}
+                        {"friend_info.displayname": { '$regex': '.*'+scopeName+'.*', '$options': 'i'}},
+                        {"friend_info.username": { '$regex': '.*'+scopeName+'.*', '$options': 'i'}},
                     ]},
                     {"status": "accepted"},
                     {"$or": [
@@ -156,7 +172,8 @@ class Friend():
             {"$project": {
                 "sender.password": 0,
                 "receiver.password": 0
-            }}
+            }},
+            {"$unwind":"$friend_info"},
         ])
         if data is not None:
             return list(data)
@@ -180,6 +197,10 @@ class Friend():
             ]})
         if data is not None:
             return Friend(**data)
+
+    def friends_for_create_chat(user_id):
+        pass
+
     
     def update(self):
         return db.friends.update_one({'_id': self._id}, {'$set': self.bson()})

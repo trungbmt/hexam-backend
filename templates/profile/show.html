@@ -312,7 +312,7 @@
             uiLibrary: 'bootstrap4'
         });
         $( document ).ready(function() {
-            let gender = {{ user.gender }};
+            let gender = "{{ user.gender }}";
 
             $(".gender-input").each(function(i, obj){
                 if(obj.value == gender)

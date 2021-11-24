@@ -11,17 +11,27 @@ body {
   padding: 0;
   border-radius: 7px;
 }
-
+#message_list {
+  height: 60vh;
+  background-image: url(https://cdn.fbsbx.com/v/t59.2708-21/252938262_2668112140163319_1600550374712058621_n.gif?_nc_cat=110&fallback=1&cb=c578a115-c1c39920&ccb=1-5&_nc_sid=041f46&_nc_ohc=pODPtZiGqugAX_eyJk3&_nc_ht=cdn.fbsbx.com&oh=805c81ca99b250b631cca0b58940f2ba&oe=61996B03);
+  background-size: cover;
+  -webkit-transition: background-image 1s ease-in;
+  transition: background-image 1s ease-in;
+}
 .profile-image {
   width: 50px;
   height: 50px;
   border-radius: 40px;
 }
-
+#newchat_search_box {
+  min-height: 330px;
+}
+.user-item {
+  cursor: pointer;
+}
 .settings-tray {
   background: #eee;
   padding: 10px 15px;
-  border-radius: 7px;
 }
 .settings-tray .no-gutters {
   padding: 0;
@@ -102,18 +112,46 @@ input:focus {
 .friend-drawer--onhover:hover .time {
   color: #fff !important;
 }
-
 hr {
   margin: 5px auto;
   width: 60%;
 }
-
+.avatar-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  border: 1px black;
+  object-fit: cover;
+}
+.chat-panel {
+  overflow-x: hidden;
+}
+.file-text {
+  font-weight: bold;
+  text-decoration: none;
+}
+.attachment-image{
+  max-width: 256px;
+  max-height: 256px;
+  object-fit: scale-down;
+}
+.material-icons {
+  cursor: pointer;
+}
+#conversation_message { 
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+   -webkit-line-clamp: 2; /* number of lines to show */
+   -webkit-box-orient: vertical;
+}
 .chat-bubble {
+  max-width: 500px;
   padding: 10px 14px;
   background: #eee;
   margin: 10px 30px;
   border-radius: 9px;
-  overflow-wrap: normal;
+  overflow-wrap: anywhere;
   position: relative;
   animation: fadeIn 1s ease-in;
 }
@@ -163,7 +201,6 @@ hr {
   align-items: baseline;
   padding: 10px 15px;
   align-items: center;
-  margin-top: 19px;
   bottom: 0;
 }
 .chat-box-tray input {

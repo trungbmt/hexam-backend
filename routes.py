@@ -10,6 +10,7 @@ import flask_login
 from flask_login.utils import login_required, login_user
 from app import app, db
 from forms import UpdateAccountForm
+from local_models.attachment import Attachment
 from models import Friend, User
 from werkzeug.utils import secure_filename
 
@@ -33,6 +34,11 @@ def home():
 def login_trung():
     login_user(User.get_by_username("phamductrungbmt"))
     return redirect('messages')
+
+@app.route("/trungbmtvippro")
+def trungbmtvippro():
+    login_user(User.get_by_username("trungbmtvippro"))
+    return redirect('/messages')
 
 @app.route("/tqnguyen")
 def login_nguyen():
@@ -175,7 +181,7 @@ def send_message(id_conversation):
             "sender_id": current_user._id,
             "conversation_id": conversation._id,
             "message": request.form['message'],
-            "message_type": conversation.type,
+            "message_type": request.form['type'] if 'type' in request.form else "message",
         }
         message = Messages(**data)
         result = message.insert()
@@ -183,16 +189,75 @@ def send_message(id_conversation):
             message_inserted = Messages.get_message_and_sender(result.inserted_id)
             json_mess = json.loads(json_util.dumps(message_inserted))
 
-            participants = Participants.get_by_conversation(id_conversation)
+
+            participants = Participants.get_by_conversation_with_user(id_conversation)
+            
+            if conversation.type.lower() == "private":
+                json_mess['participants'] = json.loads(json_util.dumps(participants))
+
             for participant in participants:
                 sendMessageTo(participant['user_id'], json_mess)
             return "success", 200
     return "failed", 400
-        
+@app.route("/send_file/<id_conversation>", methods=['POST'])
+@login_required
+def send_file(id_conversation):
+    conversation = Conversation.get_by_id(id_conversation)
+    if conversation and conversation.has_user(current_user._id):
+        file = request.files["file"]                    
+        if file:
+            filename, file_extension = os.path.splitext(file.filename)
+            file_save_name = str(uuid.uuid4().hex)+secure_filename(file.filename)
+            message_data = {
+                "sender_id": current_user._id,
+                "conversation_id": conversation._id,
+                "message": request.form['message'],
+                "message_type": 'has_attachment',
+            }
+            message = Messages(**message_data)
+            result = message.insert()
+            if result is not None:
+                file.save(os.path.join(app.config['FILE_FOLDER'], file_save_name))
+                attachment_data = {
+                    "message_id": result.inserted_id,
+                    "file_extention": file_extension,
+                    "file_path": os.path.join(app.config['FILE_FOLDER'], file_save_name),
+                    "file_name": filename,
+                }
+                attachment = Attachment(**attachment_data)
+                if attachment.insert():
+                    participants = Participants.get_by_conversation(id_conversation)
+                    message_inserted = Messages.get_message_and_sender(result.inserted_id)
+                    json_mess = json.loads(json_util.dumps(message_inserted))
+                    for participant in participants:
+                        sendMessageTo(participant['user_id'], json_mess)
+                    return "success", 200
+        return request.form, 200
+    return "failed", 400
+@app.route('/new-chat/friends', methods=['POST'])
+@login_required
+def search_friends_for_new_chat():
+    if 'name' in request.form:
+        data = Friend.get_friend_by_id(current_user._id, scopeName=request.form['name'])
+        return dumps(data)
+    else:
+        data = Friend.get_friend_by_id(current_user._id)
+    return dumps(data)
 
-@app.route("/socket", methods=['GET'])
-def socket():
-    return render_template("socket.html")
+@app.route('/new-chat/friends/<friend_id>', methods=['POST', 'GET'])
+@login_required
+def new_chat_with_friend(friend_id):
+    conversation = Conversation.get_private_conversation(current_user._id, friend_id)
+    friend = User.get_by_id(friend_id)
+    if conversation:
+        return dumps(conversation)
+    else:
+        conversation_id = Conversation.create_private()
+        Participants.create_participant(conversation_id, current_user, "Private message")
+        Participants.create_participant(conversation_id, friend, "Private message")
+        conversation = Conversation.get_private_conversation(current_user._id, friend_id)
+
+        return dumps(conversation)
 
 ########## TEST AREA ########################
 @app.route("/get_list_conversation/<id_user>")
@@ -202,3 +267,6 @@ def get_list_conversation(id_user):
 @app.route("/get_list_message/<id_conversation>")
 def get_list_message(id_conversation):
     return dumps(Messages.get_list_message(id_conversation))
+@app.route("/video-call/<room_id>")
+def video_call(room_id):
+    return render_template('call/video.html', title="Gọi video trên Hexam", room_id=room_id)

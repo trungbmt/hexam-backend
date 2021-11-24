@@ -4,14 +4,23 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 {% endblock css %}
 {% block content %}
-<div class="container">
+<div class="main">
+  <img style="z-index: -99; position: absolute; width: 100%; height: 100%; object-fit: cover;" src="https://i.gifer.com/GIWH.gif">
+  <div class="col-10 mx-auto">
     <div class="row no-gutters">
-      <div class="col-md-4 border-right">
+      <div class="col-md-4 border-right mt-5 bg-light rounded">
         <div class="settings-tray">
           <img class="profile-image" src="{{url_for('static', filename=current_user.avatar)}}" alt="Profile img">
           <span class="settings-tray--right">
             <i class="material-icons">cached</i>
-            <i class="material-icons">message</i>
+              <i class="material-icons" type="button" data-toggle="dropdown">message</i>
+              <div class="dropdown-menu col-8">
+                <div class="border bg-muted">
+                  <input id="ip_sfnc" class="form-control" type="text" placeholder="Tên người dùng">
+                </div>
+                <div id="newchat_search_box">
+                </div>
+              </div>
             <i class="material-icons">menu</i>
           </span>
         </div>
@@ -23,30 +32,33 @@
         </div>
         <div id="conversation_list"> 
           {% for conversation in list_conversation %}
-            <div id="c_{{ conversation.conversation_id }}" onclick="change_conversation(this)" data-conversation="{{ conversation.conversation_id }}" class="friend-drawer friend-drawer--onhover">
+            <div id="c_{{ conversation.conversation_id }}" onclick="prepare_change_conversation(this)" data-conversation="{{ conversation.conversation_id }}" class="border-bottom friend-drawer friend-drawer--onhover">
               {% if conversation.conversation.type.lower() == "private" %}
                 <img id="conversation_image" class="profile-image" src="{{url_for('static', filename=conversation.participant.user.avatar)}}" alt="">
               {% else %}
-                <img id="conversation_image" class="profile-image" src="{{url_for('static', filename=conversation.sender.avatar)}}" alt="">
+                {% if conversation.conversation.avatar %}
+                  <img id="conversation_image" class="profile-image" src="{{url_for('static', filename=conversation.conversation.avatar)}}" alt="">
+                {% else %}
+                  <img id="conversation_image" class="profile-image" src="{{url_for('static', filename='images/default_group.png')}}" alt="">
+                {% endif %}
               {% endif %}
               <div class="text">
                 {% if conversation.conversation.type.lower() == "private" %}
                   <h6 id="conversation_title">{{ conversation.participant.title }}</h6>
-                  <p id="conversation_message" style="overflow: hidden; text-overflow: ellipsis;" class="text-muted">{{ conversation.message }}</p>
+                  <p id="conversation_message" class="text-muted">{{ conversation.message }}</p>
                 {% else %}
                   <h6 id="conversation_title">{{ conversation.conversation.title }}</h6>
-                  <p id="conversation_message" style="overflow: hidden; text-overflow: ellipsis;" class="text-muted"><strong>{{ conversation.sender.displayname }}</strong>: {{ conversation.message }}</p>
+                  <p id="conversation_message" class="text-muted"><strong>{{ conversation.sender.displayname }}</strong>: {{ conversation.message }}</p>
                 {% endif %}
               </div>
-              <span class="time text-muted small my-auto">{{ conversation._id.generation_time }}</span>
+              <span id="conversation_time" data-time='{{conversation.message_id.generation_time}}' class="time text-muted small my-auto"></span>
               <i id="badge_message" class="fas fa-circle text-danger ml-auto mb-auto"></i>
             </div>
-            <hr>
           {% endfor %}
         </div>
       </div>
-      <div class="col-md-8">
-        <div class="settings-tray">
+      <div class="col-md-8 mt-5 rounded bg-light">
+        <div class="settings-tray rounded">
             <div id="conversation_item" class="friend-drawer no-gutters friend-drawer--grey">
             <img id="chatter_avatar" class="profile-image" src="https://www.clarity-enhanced.net/wp-content/uploads/2020/06/robocop.jpg" alt="">
             <div class="text">
@@ -56,12 +68,13 @@
             <span class="settings-tray--right">
               <i class="material-icons">cached</i>
               <i class="material-icons">message</i>
+              <i onclick="callVideo()" class="material-icons">videocam</i>
               <i class="material-icons">menu</i>
             </span>
           </div>
         </div>
         <div>
-          <div class="chat-panel" id="message_list" style="height: 60vh; overflow: scroll;">
+          <div class="chat-panel" id="message_list">
             
           </div>
           <div class="row">
@@ -69,35 +82,183 @@
               <div class="chat-box-tray">
                 <i class="material-icons">sentiment_very_satisfied</i>
                 <input id="message_input" type="text" placeholder="Type your message here...">
-                <i class="material-icons">mic</i>
+                <div class="dropup">
+                  <i class="material-icons" data-toggle="dropdown">mic</i>
+                  <div class="dropdown-menu">
+                    <span class="btn btn-primary" onclick="startRecording()"></span>
+                    <span class="btn btn-danger" onclick="stopRecording()"></span>
+                    <audio id="player" controls></audio>
+                  </div>
+                </div>
+                <i class="material-icons" onclick="$('#file_attachment').click()">attach_file</i>
                 <i onclick="send_message()" class="material-icons">send</i>
+                <input id="file_attachment" type="file" class="d-none">
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
 </div>
 {% endblock content %}
 {% block js %}
-
+<script src="https://momentjs.com/downloads/moment-with-locales.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
 <script type="text/javascript" charset="utf-8">
   var spinner = $('<div id="messages_spinner" class="d-flex justify-content-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></div>');
   
-  $( document ).ready(function() {
+  var socket = io();
+  socket.on('connect', function() {
+    console.log("Socket connected");
+    socket.on('chat message', (msg) => {
+        fresh_conversation(msg);
+    });
   });
-  function change_conversation(element){
-    let conversation_name = $(element).find("#conversation_title").text();
-    let img_src = $(element).find("#conversation_image").attr("src");
-    let id_conversation = $(element).data("conversation");
+  $( document ).ready(function() {
+    var time_text = $('.time').each(function( index ) {
+      let time = moment($( this ).data('time'));
+      $(this).text(time.locale('vi').fromNow());
+    });
+    
+    setInterval(function(element) {
+      
+      var time_text = $('.time').each(function( index ) {
+        let time = moment($( this ).data('time'));
+        $(this).text(time.locale('vi').fromNow());
+      });
+    }, 1000*5);
+
+    $('#file_attachment').on("change", function(){ uploadFile(this); });
+    $("#ip_sfnc").keyup($.debounce(500, function(e) {
+      let search_name = this.value
+      var list_user = $("#newchat_search_box")
+      list_user.append(spinner)
+      $.ajax({
+        url:"/new-chat/friends",
+        method:"POST",
+        data: {name: search_name},
+        success:function(data){ 
+            if(data) {
+                
+                list_user.empty();
+                $.each(JSON.parse(data), function(i, item) {
+                  var userData = item['friend_info']
+
+                  var name = $('<span class="h5">'+userData['displayname']+'</span>')
+                  var tag = $('<br><span class="h7 font-italic">@'+userData['username']+'</span>')
+                  var info = $('<div class="ml-2"></div>')
+                  var avatar = $('<img class="profile-image" src="/static/'+userData['avatar']+'">')
+                  var user = $('<div class="dropdown-item d-flex user-item"></div>')
+                  user.append(avatar)
+                  user.append(info)
+                  info.append(name)
+                  info.append(tag)
+                  list_user.append(user)
+
+                  $(user).on("click", function(){
+                    
+                    user_id = userData['_id']['$oid']
+
+                    $.ajax({
+                      url:"/new-chat/friends/"+user_id,
+                      method:"POST",
+                      success:function(data){ 
+                          if(data) {
+                            data = JSON.parse(data)
+
+                            var data_conversation = {}
+                            data_conversation['id_conversation'] = data['_id']['$oid'];
+
+                            data['participants'].forEach(participant =>{
+
+                              let user_id = participant['user_id']['$oid']
+
+                              if(user_id != current_user_id) {
+                                data_conversation['conversation_name'] = participant['title'];
+                                data_conversation['img_src'] = '/static/'+participant['user']['avatar']
+                                
+                              }
+                            })
+                            change_conversation(data_conversation)
+
+                          }
+                      },
+                      error: function (xhr, ajaxOptions, thrownError) {
+                          console.log(xhr);
+                      }
+                    });
+
+                  })
+
+                });
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.log(xhr);
+        }
+      });
+    }));
+  });
+  function showImagePreview(element) {
+    var src = $(element).attr('src');
+    var w = 1280;
+    var h = 720;
+    var left = (window.screen.width / 2) - ((w / 2) + 10);
+    var top = (window.screen.height / 2) - ((h / 2) + 50);
+    window.open(src,'_blank',
+        "status=no,height=" + h + ",width=" + w + ",resizable=yes,left="
+        + left + ",top=" + top + ",screenX=" + left + ",screenY="
+        + top + ",toolbar=no,menubar=yes,scrollbars=no,location=no,directories=no").focus();
+  }
+  function callVideo(){
+    var conversation_id = $("#conversation_item").data("conversation");
+    send_request("{{ current_user.displayname }} vừa gia nhập phòng gặp mặt.", "join_call_room", conversation_id);
+
+    var w = 1280;
+    var h = 720;
+    var left = (window.screen.width / 2) - ((w / 2) + 10);
+    var top = (window.screen.height / 2) - ((h / 2) + 50);
+
+    window.open('/video-call/'+conversation_id,'_blank',
+        "status=no,height=" + h + ",width=" + w + ",resizable=yes,left="
+        + left + ",top=" + top + ",screenX=" + left + ",screenY="
+        + top + ",toolbar=no,menubar=yes,scrollbars=no,location=no,directories=no").focus();
+  }
+  function uploadFile(file_input){
+    let conversation_id = $("#conversation_item").data('conversation');
+    if ($(file_input).get(0).files.length != 0) {
+      var formData = new FormData();
+      formData.append("file", file_input.files[0]);
+      formData.append("message", "");
+      var request = new XMLHttpRequest();
+      request.open("POST", "/send_file/"+conversation_id);
+      request.setRequestHeader("X-CSRFToken", csrftoken);
+      request.send(formData);
+    }
+  }
+  function prepare_change_conversation(element){
+    var data = {}
+    data['conversation_name'] = $(element).find("#conversation_title").text();
+    data['img_src'] = $(element).find("#conversation_image").attr("src");
+    data['id_conversation'] = $(element).data("conversation");
+    $(element).find("#badge_message").addClass("d-none");
+    $(element).find("#conversation_message").removeClass("font-weight-bold");
+
+    change_conversation(data);
+  }
+  function change_conversation(data){
+    let conversation_name = data['conversation_name']
+    let img_src = data['img_src']
+    let id_conversation = data['id_conversation']
+
+    $("#message_list").css('background-image', 'url('+img_src+')');
 
     $("#chatter_displayname").text(conversation_name);
     $("#chatter_avatar").attr("src", img_src);
     $("#message_list").append(spinner);
     $("#conversation_item").data("conversation", id_conversation);
-    $(element).find("#badge_message").addClass("d-none");
-    $(element).find("#conversation_message").removeClass("font-weight-bold");
+
     $.ajax({
       url:"/get_messages/"+id_conversation,
       method:"POST",
@@ -127,9 +288,25 @@
       chat_bubble_direction = "chat-bubble--left"
     }
 
-    let item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div class="'+offset+'"><div class="chat-bubble '+chat_bubble_direction+'">'+message+'</div></div></div>');
+    let item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div>');
+    if(data.sender_id['$oid'] != current_user_id) {
+      let avatar = $('<div class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></div>')
+      $(item).find("#offset").prepend(avatar);
+    }
+    if(data.message_type == 'has_attachment') {
+      
+      let attachment = render_attachment(data.attachment);
+      $(item).find('#bubble').append(attachment);
+      if(isBlank(message)) {
+        $(item).find("br").remove();
+      }
+    }
+    
+    if(data.message_type == 'join_call_room') {
+      let joinLink = $('<br><button style="font-size: 0.9rem" onclick="callVideo();" class="btn btn-danger text-upper"><i class="fas fa-video mr-2"></i>Nhấp vào đây để tham gia</button>')
+      $(item).find('#bubble').append(joinLink);
+    }
 
-    console.log(data);
     $("#message_list").prepend(item)
     $('#message_list').scrollTop($('#message_list')[0].scrollHeight);
   }
@@ -142,28 +319,158 @@
     } else {
       chat_bubble_direction = "chat-bubble--left"
     }
-    
-    let item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div class="'+offset+'"><div class="chat-bubble '+chat_bubble_direction+'">'+message+'</div></div></div>');
+    let item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div>');
+    if(data.sender_id['$oid'] != current_user_id) {
+      let avatar = $('<div class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></div>')
+      $(item).find("#offset").prepend(avatar);
+    }
+    if(data.message_type == 'has_attachment') {
+      let attachment = render_attachment(data.attachment);
+      $(item).find('#bubble').append(attachment);
+      
+      if(isBlank(message)) {
+        $(item).find("br").remove();
+      }
+    }
+    if(data.message_type == 'join_call_room') {
+      let joinLink = $('<br><button style="font-size: 0.9rem" onclick="callVideo();" class="btn btn-danger text-upper"><i class="fas fa-video mr-2"></i>Nhấp vào đây để tham gia</button>')
+      $(item).find('#bubble').append(joinLink);
+    }
 
-    $("#message_list").append(item)
+    $("#message_list").append(item);
     $('#message_list').scrollTop($('#message_list')[0].scrollHeight);
   }
-  var socket = io();
-  socket.on('connect', function() {
-    console.log("Socket connected");
-    socket.on('chat message', (msg) => {
-        $("#conversation_list").find("#c_"+msg.conversation_id['$oid']).find("#conversation_message").text(msg.message)
-        if($("#conversation_item").data("conversation") == msg.conversation_id['$oid']){
-            append_message(msg);
-        } else {
-          
-          if(msg.sender_id['$oid'] != current_user_id) {
-            $("#conversation_list").find("#c_"+msg.conversation_id['$oid']).find("#conversation_message").addClass("font-weight-bold");
-            $("#conversation_list").find("#c_"+msg.conversation_id['$oid']).find("#badge_message").removeClass("d-none");
+  function render_attachment(data) {
+    let type = data.file_extention;
+    var attachment;
+    if (["png", "jpg", "gif", "jpeg"].some(v => type.includes(v))) {
+      attachment = $('<span><br><img onclick="showImagePreview(this)" class="attachment-image" src='+data.file_path+' alt="Image"></span>')
+    }
+    else if (["mp4", "avi", "m4v"].some(v => type.includes(v))) {
+      attachment = $('<br><video  width="320" height="240" controls><source src="'+data.file_path+'">Your browser does not support the video tag.</video>')
+    }
+    else if (["mp3", "mpa", "wav"].some(v => type.includes(v))) {
+      attachment = $('<br><audio controls><source src="'+data.file_path+'">Your browser does not support the audio element.</audio>')
+    }
+    else {
+      let icon = "";
+      switch(type) {
+        case ".docx":
+          icon = "-word"
+          break;
+        case ".doc":
+          icon = "-word"
+          break;
+        case ".pptx":
+          icon = "-powerpoint"
+          break;
+        case ".pdf":
+          icon = "-pdf"
+          break;
+        case ".xlsx":
+          icon = "-excel"
+          break;
+        case ".rar":
+          icon = "-archive"
+          break;
+        case ".zip":
+          icon = "-archive"
+          break;
+        case ".txt":
+          icon = "-alt"
+          break;
+        default:
+      }
+      let iconElement = $('<i class="fas fa-file'+icon+'"></i>')
+      attachment = $('<span><br><a target="_blank" href="'+data.file_path+'" class="file-text text-decoration-none"> '+data.file_name+data.file_extention+'</a></span>');
+      attachment.find('a').prepend(iconElement);
+    }
+    return attachment;
+  }
+  function append_conversation_to_list(msg){
+    let new_conversation = $('<div id="'+msg.conversation_id['$oid']+'" onclick="prepare_change_conversation(this)" data-conversation="'+msg.conversation_id['$oid']+'" class="border-bottom friend-drawer friend-drawer--onhover"></div')
+    if(msg['conversation']['type'] == "private"){
+      let cvs_avatar, cvs_title;
+      if(current_user_id != msg['sender']['_id']['$oid']) {
+        cvs_avatar = "static/"+msg['sender']['avatar']
+        cvs_title = msg['sender']['displayname']
+      } else {
+        msg['participants'].forEach(participant => {
+          if(participant['user_id']['$oid'] != current_user_id) {
+            cvs_title = participant['title']
+            cvs_avatar = 'static/'+participant['user']['avatar']
           }
-        }
+        })
+      }
+
+      var avatar = $('<img id="conversation_image" class="profile-image" src="'+cvs_avatar+'" alt="">')
+      var title = $('<h6 id="conversation_title">'+cvs_title+'</h6>')
+    } else {
+      let cvs_avatar = "static/"+msg['conversation']['avatar']
+      let cvs_title = "static/"+msg['conversation']['title']
+      if(!cvs_avatar) {
+        cvs_avatar = "static/images/default_group.png"
+      }
+      var avatar = $('<img id="conversation_image" class="profile-image" src="static/'+cvs_avatar+'" alt="">')
+      var title = $('<h6 id="conversation_title">'+cvs_title+'</h6>')
+    }
+    let new_message = $('<div class="text"></div>')
+    new_message.append(title)
+    new_message.append($('<p id="conversation_message" class="text-muted"></p>'))
+    
+    new_conversation.append(avatar)
+    new_conversation.append(new_message)
+    new_conversation.append($('<span id="conversation_time" class="time text-muted small my-auto"></span>'))
+    new_conversation.append('<i id="badge_message" class="fas fa-circle text-danger ml-auto mb-auto"></i>')
+    $("#conversation_list").append(new_conversation);
+    return new_conversation
+  }
+  function fresh_conversation(msg){
+    console.log("new message:")
+    console.log(msg)
+
+    let conversation = $("#conversation_list").find("#c_"+msg.conversation_id['$oid']);
+    if(conversation.length==0) {
+      conversation = append_conversation_to_list(msg)
+    }
+
+    conversation.find("#conversation_message").text(msg.message)
+
+    let time = moment(dateFromObjectId(msg._id['$oid']));
+    conversation.find("#conversation_time").text(time.locale('vi').fromNow());
+    conversation.find("#conversation_time").data('time', dateFromObjectId(msg._id['$oid']));
+
+    $("#conversation_list").prepend(conversation)
+
+    if($("#conversation_item").data("conversation") == msg.conversation_id['$oid']){
+        append_message(msg);
+    } else {
+      
+      if(msg.sender_id['$oid'] != current_user_id) {
+        $("#conversation_list").find("#c_"+msg.conversation_id['$oid']).find("#conversation_message").addClass("font-weight-bold");
+        $("#conversation_list").find("#c_"+msg.conversation_id['$oid']).find("#badge_message").removeClass("d-none");
+      }
+    }
+  }
+  function send_request(message, type, conversation_id){
+    
+    $.ajax({
+      url:"/send_message/"+conversation_id,
+      method:"POST",
+      data: {"message": message, "type": type},
+      success:function(data){ 
+          if(data) {
+              console.log(data)
+          }
+      },
+      error: function (xhr, ajaxOptions, thrownError) {
+          console.log(xhr);
+      }
     });
-  });
+
+
+    $("#message_input").val("");
+  }
   function send_message(){
     let conversation_id = $("#conversation_item").data("conversation");
     var data = [];
