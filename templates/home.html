@@ -5,22 +5,23 @@
 {% endblock css %}
 {% block content %}
 <div class="main">
-  <img style="z-index: -99; position: absolute; width: 100%; height: 100%; object-fit: cover;" src="https://i.gifer.com/GIWH.gif">
+  <img style="z-index: -99; position: absolute; width: 100%; height: 100%; object-fit: cover;" src="{{ url_for('static', filename='images/background.gif')}}">
   <div class="col-10 mx-auto">
     <div class="row no-gutters">
       <div class="col-md-4 border-right mt-5 bg-light rounded">
         <div class="settings-tray">
           <img class="profile-image" src="{{url_for('static', filename=current_user.avatar)}}" alt="Profile img">
           <span class="settings-tray--right">
-            <i class="material-icons">cached</i>
-              <i class="material-icons" type="button" data-toggle="dropdown">message</i>
-              <div class="dropdown-menu col-8">
-                <div class="border bg-muted">
-                  <input id="ip_sfnc" class="form-control" type="text" placeholder="Tên người dùng">
-                </div>
-                <div id="newchat_search_box">
-                </div>
+            <i class="material-icons" onclick="location.reload();">cached</i>
+            <i id="dropdown_newchat" class="material-icons" type="button" data-toggle="dropdown">message</i>
+            <div class="dropdown-menu col-8">
+              <div class="border bg-muted">
+                <input id="ip_sfnc" class="form-control" type="text" placeholder="Tên người dùng">
               </div>
+              <div id="newchat_search_box">
+              </div>
+            </div>
+            <i class="material-icons" onclick="$('#myModalAddGroupsChat').modal('show')">group_add</i>
             <i class="material-icons">menu</i>
           </span>
         </div>
@@ -32,7 +33,7 @@
         </div>
         <div id="conversation_list"> 
           {% for conversation in list_conversation %}
-            <div id="c_{{ conversation.conversation_id }}" onclick="prepare_change_conversation(this)" data-conversation="{{ conversation.conversation_id }}" class="border-bottom friend-drawer friend-drawer--onhover">
+            <div id="c_{{ conversation.conversation_id }}" data-participants="{{json.dumps(conversation.participants)}}" data-type="{{conversation.conversation.type}}" onclick="prepare_change_conversation(this)" data-conversation="{{ conversation.conversation_id }}" class="border-bottom friend-drawer friend-drawer--onhover">
               {% if conversation.conversation.type.lower() == "private" %}
                 <img id="conversation_image" class="profile-image" src="{{url_for('static', filename=conversation.participant.user.avatar)}}" alt="">
               {% else %}
@@ -52,7 +53,9 @@
                 {% endif %}
               </div>
               <span id="conversation_time" data-time='{{conversation.message_id.generation_time}}' class="time text-muted small my-auto"></span>
+              {% if not conversation.myParticipant.seen %}
               <i id="badge_message" class="fas fa-circle text-danger ml-auto mb-auto"></i>
+              {% endif %}
             </div>
           {% endfor %}
         </div>
@@ -69,13 +72,33 @@
               <i class="material-icons">cached</i>
               <i class="material-icons">message</i>
               <i onclick="callVideo()" class="material-icons">videocam</i>
-              <i class="material-icons">menu</i>
+              <i class="material-icons" onclick="$('#info_conversation').toggle(200)">menu</i>
             </span>
           </div>
         </div>
-        <div>
-          <div class="chat-panel" id="message_list">
-            
+        <div class="">
+          <div class="d-flex">
+            <div class="flex-fill chat-panel" id="message_list">
+            </div>
+            <div id="info_conversation" class="bg-white border rounded in width multi-collapse col-lg-4 col-sm-6" style="display: none;">
+              <div class="text-center my-3">
+                <img id="c_info_avatar" class="avatar-circle-lg" src="#">
+                <h5 id="c_info_name"></h5>
+              </div>
+              <div class="list-group">
+                <a href="#" class="list-group-item list-group-item-action">
+                  Đổi tên đoạn chat
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" data-toggle="collapse" data-target="#collapseMemberList" aria-expanded="false" aria-controls="collapseMemberList">
+                  Thành viên trong đoạn chat
+                </a>
+                <div class="collapse border rounded" id="collapseMemberList">
+                  <div id="list_member_group">
+                    
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="row">
             <div class="col-12">
@@ -101,8 +124,59 @@
     </div>
   </div>
 </div>
+
+<div class="modal" id="myModalAddGroupsChat">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+    
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="row">
+          <div class="col-xl-12">
+            <h3 class="modal-title">Tạo nhóm</h3>
+            <button type="button" class="close" style="margin-top: -50px;" onclick="$('#myModalAddGroupsChat').modal('hide')">×</button>
+          </div>
+          <form id="create_group_form">
+            <div>
+              <input id="create_group_name" type="text" class="form-control rounded" placeholder="Tên nhóm" required name="name">
+            </div>
+            <h5 class="mt-2">Danh sách thành viên:</h5>
+            <ul class="list-inline" style="margin: 10px 0 0 10px;">
+              <li id="creategroup_list_added" class="list-inline-item"> 
+              </li>
+            </ul>
+          </form>
+          <div class="col-xl-12" style="margin-top: 10px;">
+            <div class="input-group">
+              <input id="ip_sfcg" type="search" class="form-control rounded" placeholder="Tìm kiếm theo tên" aria-label="Search"
+              aria-describedby="search-addon" />
+              <button type="button" class="btn btn-outline-primary"><i class="fa fa-search"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Modal body -->
+      <div class="modal-body">
+        <div class="alert alert-danger d-none" id="empty_friend"> <!-- Nếu k người này chưa kết bạn vs ai thì sẽ k có list friends thì sẽ cho hiện dòng này -->
+          <strong>Kết quả tìm kiếm trống!</strong> Bạn nên <a href="#" class="alert-link">tìm kiếm thêm bạn</a>.
+        </div>
+        <div id="creategroup_list_friend">
+        </div>
+      </div>
+      
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button onclick="create_group($('#create_group_form').serialize())" type="button" class="btn btn-success">Tạo group</button>
+        <button type="button" class="btn btn-danger" onclick="$('#myModalAddGroupsChat').modal('hide')">Close</button>
+      </div>
+      
+    </div>
+  </div>
+</div>
 {% endblock content %}
 {% block js %}
+<script src="{{ url_for('static', filename='js/group.js') }}"></script>
 <script src="https://momentjs.com/downloads/moment-with-locales.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
 <script type="text/javascript" charset="utf-8">
@@ -132,74 +206,168 @@
     $('#file_attachment').on("change", function(){ uploadFile(this); });
     $("#ip_sfnc").keyup($.debounce(500, function(e) {
       let search_name = this.value
-      var list_user = $("#newchat_search_box")
-      list_user.append(spinner)
-      $.ajax({
-        url:"/new-chat/friends",
-        method:"POST",
-        data: {name: search_name},
-        success:function(data){ 
-            if(data) {
-                
-                list_user.empty();
-                $.each(JSON.parse(data), function(i, item) {
-                  var userData = item['friend_info']
-
-                  var name = $('<span class="h5">'+userData['displayname']+'</span>')
-                  var tag = $('<br><span class="h7 font-italic">@'+userData['username']+'</span>')
-                  var info = $('<div class="ml-2"></div>')
-                  var avatar = $('<img class="profile-image" src="/static/'+userData['avatar']+'">')
-                  var user = $('<div class="dropdown-item d-flex user-item"></div>')
-                  user.append(avatar)
-                  user.append(info)
-                  info.append(name)
-                  info.append(tag)
-                  list_user.append(user)
-
-                  $(user).on("click", function(){
-                    
-                    user_id = userData['_id']['$oid']
-
-                    $.ajax({
-                      url:"/new-chat/friends/"+user_id,
-                      method:"POST",
-                      success:function(data){ 
-                          if(data) {
-                            data = JSON.parse(data)
-
-                            var data_conversation = {}
-                            data_conversation['id_conversation'] = data['_id']['$oid'];
-
-                            data['participants'].forEach(participant =>{
-
-                              let user_id = participant['user_id']['$oid']
-
-                              if(user_id != current_user_id) {
-                                data_conversation['conversation_name'] = participant['title'];
-                                data_conversation['img_src'] = '/static/'+participant['user']['avatar']
-                                
-                              }
-                            })
-                            change_conversation(data_conversation)
-
-                          }
-                      },
-                      error: function (xhr, ajaxOptions, thrownError) {
-                          console.log(xhr);
-                      }
-                    });
-
-                  })
-
-                });
-            }
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            console.log(xhr);
-        }
-      });
+      sfnc(search_name);
     }));
+    $('#dropdown_newchat').on('click', function () {
+      let search_name = $("#ip_sfnc").val();
+      sfnc(search_name);
+    })
+    $( "#myModalAddGroupsChat" ).on('show.bs.modal', function(){
+      sfcg();
+    });
+    $("#ip_sfcg").keyup($.debounce(500, function(e) {
+      sfcg();
+    }));
+
   });
+  function sfcg(){
+    let search_name = $("#ip_sfcg").val();
+    var list_user = $("#creategroup_list_friend")
+    var list_user_added = $("#creategroup_list_added")
+    $.ajax({
+      url:"/new-chat/friends",
+      method:"POST",
+      data: {name: search_name},
+      success:function(data){ 
+          if(data) {
+            list_user.empty();
+            data = JSON.parse(data);
+
+            if(data.length == 0 ){
+              $('#empty_friend').removeClass('d-none');
+              return;
+            } else {
+              $('#empty_friend').addClass('d-none');
+            }
+            $.each(data, function(i, item) {
+              var userData = item['friend_info']
+              var user_id = userData['_id']['$oid']
+              
+              var item = $('<div class="card p-3"></div>')
+              var info = $('<div class="d-flex align-items-center"></div>')
+              var avatar = $('<div class="image"> <img src="/static/'+userData['avatar']+'" class="rounded" width="100"> </div>')
+              var name_tag = $('<div class="ml-3 w-100"></div>')
+              var name = $('<h5 class="mb-0 mt-0">'+userData['displayname']+'</h5>')
+              var tag = $('<span class="font-italic">@'+userData['username']+'</span>')
+              var button = $('<div class="button mt-2 d-flex flex-row align-items-center"><button class="btn btn-sm btn-outline-primary w-100">Thêm</button></div>')
+              
+              $(button).on("click", function(){
+                
+
+                let item = $('<span data-id="'+user_id+'" class="mx-1 my-1 badge badge-pill badge-secondary creategroup_user_added"></div>')
+                let avatar = $('<img src="/static/'+userData['avatar']+'" alt="DP" class=" rounded-circle added_cgroup_avatar">')
+                let name = $('<span>'+userData['displayname']+'</span>')
+                let input = $('<input type="hidden" value="'+user_id+'" name="users[]">')
+                let button = $('<button type="button" class="close">×</button>')
+
+                item.append(avatar)
+                item.append(name)
+                item.append(input)
+                item.append(button)
+                $(button).on("click", function(){
+                  $(item).remove()
+                  sfcg();
+                })
+                list_user_added.append(item)
+                $(this).replaceWith($('<div class="button mt-2 d-flex flex-row align-items-center"> <button class="btn btn-sm btn-outline-secondary w-100">Đã thêm</button></div>'))
+
+              })
+
+              $(list_user_added).children().each((index, element) => {
+                if($(element).data('id')==user_id) {
+                  button = $('<div class="button mt-2 d-flex flex-row align-items-center"> <button class="btn btn-sm btn-outline-secondary w-100">Đã thêm</button></div>')
+                  return false;
+                }
+              })
+
+              item.append(info)
+              info.append(avatar)
+              info.append(name_tag)
+              name_tag.append(name)
+              name_tag.append(tag)
+              name_tag.append(button)
+
+              list_user.append(item)
+
+            });
+          }
+      },
+      error: function (xhr, ajaxOptions, thrownError) {
+          console.log(xhr);
+      }
+    });
+
+  }
+  function sfnc(search_name) {
+    
+    var list_user = $("#newchat_search_box")
+    list_user.append(spinner)
+    $.ajax({
+      url:"/new-chat/friends",
+      method:"POST",
+      data: {name: search_name},
+      success:function(data){ 
+          if(data) {
+              
+              list_user.empty();
+              $.each(JSON.parse(data), function(i, item) {
+                var userData = item['friend_info']
+
+                var name = $('<span class="h5">'+userData['displayname']+'</span>')
+                var tag = $('<br><span class="h7 font-italic">@'+userData['username']+'</span>')
+                var info = $('<div class="ml-2"></div>')
+                var avatar = $('<img class="profile-image" src="/static/'+userData['avatar']+'">')
+                var user = $('<div class="dropdown-item d-flex user-item"></div>')
+                user.append(avatar)
+                user.append(info)
+                info.append(name)
+                info.append(tag)
+                list_user.append(user)
+
+                $(user).on("click", function(){
+                  
+                  user_id = userData['_id']['$oid']
+
+                  $.ajax({
+                    url:"/new-chat/friends/"+user_id,
+                    method:"POST",
+                    success:function(data){ 
+                        if(data) {
+                          data = JSON.parse(data)
+
+                          var data_conversation = {}
+                          data_conversation['id_conversation'] = data['_id']['$oid'];
+
+                          data['participants'].forEach(participant =>{
+
+                            let user_id = participant['user_id']['$oid']
+
+                            if(user_id != current_user_id) {
+                              data_conversation['conversation_name'] = participant['title'];
+                              data_conversation['img_src'] = '/static/'+participant['user']['avatar']
+                              
+                            }
+                          })
+                          change_conversation(data_conversation)
+
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        console.log(xhr);
+                    }
+                  });
+
+                })
+
+              });
+          }
+      },
+      error: function (xhr, ajaxOptions, thrownError) {
+          console.log(xhr);
+      }
+    });
+    
+  }
   function showImagePreview(element) {
     var src = $(element).attr('src');
     var w = 1280;
@@ -242,15 +410,20 @@
     data['conversation_name'] = $(element).find("#conversation_title").text();
     data['img_src'] = $(element).find("#conversation_image").attr("src");
     data['id_conversation'] = $(element).data("conversation");
+    data['participants'] = $(element).data('participants')
+
     $(element).find("#badge_message").addClass("d-none");
     $(element).find("#conversation_message").removeClass("font-weight-bold");
 
     change_conversation(data);
   }
   function change_conversation(data){
+    $('#info_conversation').hide(50)
+    
     let conversation_name = data['conversation_name']
     let img_src = data['img_src']
     let id_conversation = data['id_conversation']
+    let participants = data['participants']
 
     $("#message_list").css('background-image', 'url('+img_src+')');
 
@@ -258,6 +431,28 @@
     $("#chatter_avatar").attr("src", img_src);
     $("#message_list").append(spinner);
     $("#conversation_item").data("conversation", id_conversation);
+    
+    $('#c_info_avatar').attr("src", img_src)
+    $('#c_info_name').text(conversation_name);
+
+
+    let list_member_group = $('#list_member_group')
+    $('#list_member_group').empty()
+    participants.forEach(participant => {
+      console.log(participant)
+      let member = $('<div class="ml-1 mt-1 d-flex" data-id="'+participant['user']['_id']['$oid']+'"></div>')
+      let avatar = $('<img class="avatar-circle mr-1" src="/static/'+participant['user']['avatar']+'">')
+      let name = $('<h7 class="font-weight-bold">'+participant['title']+'</h7>')
+      let join_by = $('<p class="join-by font-weight-light font-italic">'+participant['join_by']+'</p>')
+      let info = $('<div></div>')
+
+      member.append(avatar)
+      member.append(info)
+
+      info.append(name)
+      info.append(join_by)
+      list_member_group.append(member)
+    }) 
 
     $.ajax({
       url:"/get_messages/"+id_conversation,
@@ -388,7 +583,7 @@
     return attachment;
   }
   function append_conversation_to_list(msg){
-    let new_conversation = $('<div id="'+msg.conversation_id['$oid']+'" onclick="prepare_change_conversation(this)" data-conversation="'+msg.conversation_id['$oid']+'" class="border-bottom friend-drawer friend-drawer--onhover"></div')
+    let new_conversation = $('<div id="c_'+msg.conversation_id['$oid']+'" data-participants=\''+JSON.stringify(msg['participants'])+'\' data-type="'+msg['conversation']['type']+'" onclick="prepare_change_conversation(this)" data-conversation="'+msg.conversation_id['$oid']+'" class="border-bottom friend-drawer friend-drawer--onhover"></div')
     if(msg['conversation']['type'] == "private"){
       let cvs_avatar, cvs_title;
       if(current_user_id != msg['sender']['_id']['$oid']) {
@@ -406,10 +601,10 @@
       var avatar = $('<img id="conversation_image" class="profile-image" src="'+cvs_avatar+'" alt="">')
       var title = $('<h6 id="conversation_title">'+cvs_title+'</h6>')
     } else {
-      let cvs_avatar = "static/"+msg['conversation']['avatar']
-      let cvs_title = "static/"+msg['conversation']['title']
+      let cvs_avatar = msg['conversation']['avatar']
+      let cvs_title = msg['conversation']['title']
       if(!cvs_avatar) {
-        cvs_avatar = "static/images/default_group.png"
+        cvs_avatar = "images/default_group.png"
       }
       var avatar = $('<img id="conversation_image" class="profile-image" src="static/'+cvs_avatar+'" alt="">')
       var title = $('<h6 id="conversation_title">'+cvs_title+'</h6>')

@@ -11,12 +11,25 @@ body {
   padding: 0;
   border-radius: 7px;
 }
+.added_cgroup_avatar {
+  width: 35px;
+  height: 35px;
+  object-fit: cover;
+}
+#conversation_list {
+  overflow-y: scroll;
+  height: 60vh;
+}
 #message_list {
   height: 60vh;
   background-image: url(https://cdn.fbsbx.com/v/t59.2708-21/252938262_2668112140163319_1600550374712058621_n.gif?_nc_cat=110&fallback=1&cb=c578a115-c1c39920&ccb=1-5&_nc_sid=041f46&_nc_ohc=pODPtZiGqugAX_eyJk3&_nc_ht=cdn.fbsbx.com&oh=805c81ca99b250b631cca0b58940f2ba&oe=61996B03);
   background-size: cover;
   -webkit-transition: background-image 1s ease-in;
   transition: background-image 1s ease-in;
+}
+.transform {
+  -webkit-transition: width 2s, height 2s, transform 2s;
+  transition: width 2s, height 2s, transform 2s;
 }
 .profile-image {
   width: 50px;
@@ -116,12 +129,24 @@ hr {
   margin: 5px auto;
   width: 60%;
 }
+.join-by {
+  font-size: 0.9rem;
+}
 .avatar-circle {
   width: 48px;
   height: 48px;
+  min-width: 48px;
   border-radius: 24px;
   border: 1px black;
   object-fit: cover;
+}
+.avatar-circle-lg {
+  width: 128px;
+  height: 128px;
+  border-radius: 64px;
+  border: 1px black;
+  object-fit: cover;
+
 }
 .chat-panel {
   overflow-x: hidden;

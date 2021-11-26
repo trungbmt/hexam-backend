@@ -4,19 +4,42 @@ from datetime import datetime
 
 
 class Participants:
-    def __init__(self, title, user_id, conversation_id, _id=None, join_by= None):
+    def __init__(self, title, user_id, conversation_id, _id=None, join_by= None, seen=None):
         self.title = title
         self.user_id = user_id
         self.conversation_id = conversation_id
         self._id = _id
         self.join_by = join_by
+        self.seen = seen
     
     @classmethod
     def get_by_id(cls, _id):
         data = db.messages.find_one({"_id", ObjectId(_id)})
         if data is not None:
             return cls(**data)
-    
+
+    @classmethod
+    def seen_by_c_u(cls, conversation_id, user_id):
+        db.participants.update_one(
+            {"$and":[
+                {"conversation_id": ObjectId(conversation_id)}, 
+                {"user_id": ObjectId(user_id)}
+            ]},
+            {"$set": {
+                "seen": True
+            }}
+        )
+        return True
+
+    @classmethod
+    def seen_by_id(cls, _id, is_seen):
+        db.participants.update_one(
+            {"_id": ObjectId(_id)},
+            {"$set": {
+                "seen": is_seen
+            }}
+        )
+        return True
 
     def get_by_conversation(conversation_id):
 
@@ -54,6 +77,9 @@ class Participants:
     def insert(self):
         return db.participants.insert_one(self.bson())
 
+    def update(self):
+        return db.participants.update_one({"_id": ObjectId(self._id)}, {"$set": self.bson()})
+
     @classmethod
     def create_participant(cls, conversation_id, user, join_by):
         data = {
@@ -74,4 +100,5 @@ class Participants:
             "user_id": ObjectId(self.user_id),
             "conversation_id": ObjectId(self.conversation_id),
             "join_by": self.join_by,
+            "seen": self.seen
         }

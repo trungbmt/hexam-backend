@@ -125,6 +125,27 @@ class Conversation:
             {"$lookup":
                 {
                     "from": "participants",
+                    "as": "participants",
+                    "let": {"conversation_id": "$conversation_id"},
+                    "pipeline": [
+                        {"$match": 
+                            {"$expr": {"$eq": ["$conversation_id", "$$conversation_id"]}},
+                        },
+                        {"$lookup":
+                            {
+                                "from": "users",
+                                "localField": "user_id",
+                                "foreignField": "_id",
+                                "as": "user"
+                            }
+                        },
+                        {"$unwind":"$user"},
+                    ]
+                }
+            },
+            {"$lookup":
+                {
+                    "from": "participants",
                     "as": "participant",
                     "let": {"conversation_id": "$conversation_id", "sender_id": "$sender_id"},
                     "pipeline": [

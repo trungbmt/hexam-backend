@@ -1,3 +1,4 @@
+import re
 from bson import json_util
 from bson.json_util import loads, dumps
 import os, uuid
@@ -13,7 +14,6 @@ from forms import UpdateAccountForm
 from local_models.attachment import Attachment
 from models import Friend, User
 from werkzeug.utils import secure_filename
-
 from local_models.conversation import Conversation
 from local_models.messages import Messages
 from local_models.participants import Participants
@@ -53,9 +53,11 @@ def login_triem():
 @app.route("/messages")
 def messages():
     list_conversation = Conversation.get_list_conversation(current_user._id)
+    # return dumps(list_conversation[1])
     return render_template('home.html', 
         title="Trang chủ", 
-        list_conversation=list_conversation
+        list_conversation=list_conversation,
+        json= json_util
     )
 
 
@@ -165,6 +167,7 @@ def get_friend_list():
 @login_required
 def get_messages(id_conversation):
     conversation = Conversation.get_by_id(id_conversation)
+    Participants.seen_by_c_u(id_conversation, current_user._id)
 
     if conversation and conversation.has_user(current_user._id):
         list_message = Messages.get_list_message(id_conversation)
@@ -192,10 +195,12 @@ def send_message(id_conversation):
 
             participants = Participants.get_by_conversation_with_user(id_conversation)
             
-            if conversation.type.lower() == "private":
-                json_mess['participants'] = json.loads(json_util.dumps(participants))
+            json_mess['participants'] = json.loads(json_util.dumps(participants))
 
             for participant in participants:
+                if participant['user_id'] != current_user._id:
+                    Participants.seen_by_id(participant['_id'], False)
+
                 sendMessageTo(participant['user_id'], json_mess)
             return "success", 200
     return "failed", 400
@@ -230,6 +235,8 @@ def send_file(id_conversation):
                     message_inserted = Messages.get_message_and_sender(result.inserted_id)
                     json_mess = json.loads(json_util.dumps(message_inserted))
                     for participant in participants:
+                        if participant['user_id'] != current_user._id:
+                            Participants.seen_by_id(participant['_id'], False)
                         sendMessageTo(participant['user_id'], json_mess)
                     return "success", 200
         return request.form, 200
@@ -258,7 +265,57 @@ def new_chat_with_friend(friend_id):
         conversation = Conversation.get_private_conversation(current_user._id, friend_id)
 
         return dumps(conversation)
+@app.route('/new-group', methods=['POST'])
+@login_required
+def new_group():
+    print(request.form.keys())
+    if 'name' not in request.form or 'users[]' not in request.form:
+        return json.dumps({
+            "message": "Lỗi, thiếu thông tin!"
+        }), 400
+    else:
+        users = request.form.getlist('users[]')
+        users.append(str(current_user._id))
 
+        name = request.form['name']
+        conversation = Conversation(**{
+            "title": name,
+            "type": "group",
+            "moderator_id": [current_user._id],
+        })
+        conversation_id = conversation.insert().inserted_id
+
+        message_data = {
+            "sender_id": current_user._id,
+            "conversation_id": conversation_id,
+            "message": "Vừa tạo nhóm!",
+            "message_type": 'create_group_message',
+        }
+        message = Messages(**message_data)
+        result = message.insert()
+        message_inserted = Messages.get_message_and_sender(result.inserted_id)
+        
+        json_mess = json.loads(json_util.dumps(message_inserted))
+
+        for user in users:
+            user = User.get_by_id(user)
+            participant = Participants(**{
+                "title": user.displayname,
+                "user_id": user._id,
+                "conversation_id": conversation_id,
+                "join_by": "Được mời bởi "+current_user.displayname
+            })
+            if user._id == current_user._id:
+                participant.join_by = "Người tạo nhóm"
+            participant.insert()
+        
+        participants = Participants.get_by_conversation_with_user(conversation_id)
+        json_mess['participants'] = json.loads(json_util.dumps(participants))
+        for user in users:
+            user = User.get_by_id(user)
+            sendMessageTo(user._id, json_mess)
+
+        return "Tạo nhóm thành công!", 200
 ########## TEST AREA ########################
 @app.route("/get_list_conversation/<id_user>")
 def get_list_conversation(id_user):
