@@ -26,10 +26,15 @@ def allowed_file(filename):
 
 @app.route("/")
 @app.route("/home")
+@login_required
 def home():
-    login_user(User.get_by_username("phamductrungbmt"))
-    return render_template('home.html', title="Trang chủ")
-
+    list_conversation = Conversation.get_list_conversation(current_user._id)
+    # return dumps(list_conversation[1])
+    return render_template('home.html', 
+        title="Trang chủ", 
+        list_conversation=list_conversation,
+        json= json_util
+    )
 @app.route("/phamductrungbmt")
 def login_trung():
     login_user(User.get_by_username("phamductrungbmt"))
