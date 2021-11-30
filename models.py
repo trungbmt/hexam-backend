@@ -90,7 +90,7 @@ class User(UserMixin):
             "dob": self.dob,
             "avatar": self.avatar,
             "address": self.address,
-            "gender": int(self.gender),
+            "gender": int(self.gender) if self.gender else None,
             "created_at": self.created_at
         })
 

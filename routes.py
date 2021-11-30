@@ -321,6 +321,115 @@ def new_group():
             sendMessageTo(user._id, json_mess)
 
         return "Tạo nhóm thành công!", 200
+@app.route('/conversation/<id_conversation>/add_member', methods=['POST'])
+@login_required
+def group_add_member(id_conversation):
+    conversation = Conversation.get_by_id(id_conversation)
+    if conversation.has_user(current_user._id) and 'user_id' in request.form:
+        user = User.get_by_id(request.form['user_id'])
+        if not user:
+            return "Không tìm thấy người dùng!", 400
+        if conversation.has_user(user._id):
+            return "Người này đã là thành viên trong nhóm!", 400
+
+        Participants.create_participant(id_conversation, user, "Được mời bởi "+current_user.displayname)
+        participant = json.loads(json_util.dumps(Participants.get_by_c_and_u(id_conversation, user._id)))
+        participant['user'] = user.info()
+        
+        message_data = {
+            "sender_id": current_user._id,
+            "conversation_id": id_conversation,
+            "message": "vừa thêm '{}' vào nhóm".format(user.displayname),
+            "message_type": 'add_group_member',
+        }
+        result = Messages(**message_data).insert()
+        message_inserted = Messages.get_message_and_sender(result.inserted_id)
+        json_mess = json.loads(json_util.dumps(message_inserted))
+        participants = Participants.get_by_conversation_with_user(id_conversation)
+        json_mess['participants'] = json.loads(json_util.dumps(participants))
+        # json_mess['user_added'] = participant
+
+        for p in participants:
+            if p['user_id'] != current_user._id:
+                Participants.seen_by_id(p['_id'], False)
+
+            sendMessageTo(participant['user_id'], json_mess)
+        data = {
+            "message": "Thêm thành viên thành công!",
+            "participant": participant
+        }
+        return data, 200
+
+    return "Thêm thành viên thất bại!", 400
+@app.route('/conversation/<id_conversation>/rename', methods=['POST'])
+@login_required
+def rename_conversation(id_conversation):
+    conversation = Conversation.get_by_id(id_conversation)
+    if conversation.has_user(current_user._id) and 'name' in request.form:
+        if conversation.type == "private":
+            Participants.change_participant_name(id_conversation, current_user._id, request.form['name'])
+        else:
+
+            message_data = {
+                "sender_id": current_user._id,
+                "conversation_id": id_conversation,
+                "message": "vừa đổi tên nhóm thành '{}'".format(request.form['name']),
+                "message_type": 'change_group_name_message',
+            }
+
+            result = Messages(**message_data).insert()
+            message_inserted = Messages.get_message_and_sender(result.inserted_id)
+            json_mess = json.loads(json_util.dumps(message_inserted))
+            participants = Participants.get_by_conversation_with_user(id_conversation)
+            json_mess['participants'] = json.loads(json_util.dumps(participants))
+
+            for participant in participants:
+                if participant['user_id'] != current_user._id:
+                    Participants.seen_by_id(participant['_id'], False)
+
+                sendMessageTo(participant['user_id'], json_mess)
+
+            conversation.title = request.form['name']
+            conversation.update()
+        return "Đổi tên cuộc trò chuyện thành công!", 200
+    else:
+        return "Đổi tên cuộc trò chuyện thất bại!", 400
+
+@app.route('/conversation/<id_conversation>/change-avatar', methods=['POST'])
+@login_required
+def change_conversation_avatar(id_conversation):
+    conversation = Conversation.get_by_id(id_conversation)
+    if conversation and conversation.has_user(current_user._id):
+        if 'file' in request.files:
+            file = request.files['file']
+            file_save_name = str(uuid.uuid4().hex)+secure_filename(file.filename)
+            file.save(os.path.join(app.config['AVATAR_FOLDER'], file_save_name))
+            file_path = os.path.join("images/avatars/", file_save_name)
+            conversation.avatar = file_path
+            conversation.update()
+            
+            message_data = {
+                "sender_id": current_user._id,
+                "conversation_id": id_conversation,
+                "message": "vừa đổi ảnh của nhóm",
+                "message_type": 'change_group_avatar_message',
+            }
+
+            result = Messages(**message_data).insert()
+            message_inserted = Messages.get_message_and_sender(result.inserted_id)
+            json_mess = json.loads(json_util.dumps(message_inserted))
+            participants = Participants.get_by_conversation_with_user(id_conversation)
+            json_mess['participants'] = json.loads(json_util.dumps(participants))
+
+            for participant in participants:
+                if participant['user_id'] != current_user._id:
+                    Participants.seen_by_id(participant['_id'], False)
+
+                sendMessageTo(participant['user_id'], json_mess)
+
+            return file_path, 200
+        return "Không tìm thấy file", 400
+    return "Không thể đổi ảnh nhóm!", 400
 ########## TEST AREA ########################
 @app.route("/get_list_conversation/<id_user>")
 def get_list_conversation(id_user):

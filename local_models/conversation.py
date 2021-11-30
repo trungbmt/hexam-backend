@@ -181,6 +181,8 @@ class Conversation:
     def insert(self):
         return db.conversation.insert_one(self.bson())
 
+    def update(self):
+        return db.conversation.update_one({"_id": self._id}, {"$set": self.bson()})
     @classmethod
     def create_private(cls):
         

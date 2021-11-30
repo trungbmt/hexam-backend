@@ -14,7 +14,7 @@ class Participants:
     
     @classmethod
     def get_by_id(cls, _id):
-        data = db.messages.find_one({"_id", ObjectId(_id)})
+        data = db.participants.find_one({"_id", ObjectId(_id)})
         if data is not None:
             return cls(**data)
 
@@ -73,6 +73,21 @@ class Participants:
             }}
         ]})
         return data
+
+    @classmethod
+    def get_by_c_and_u(cls, conversation_id, user_id):
+        data = db.participants.find_one({"$and": [
+            {"conversation_id": ObjectId(conversation_id)},
+            {"user_id": ObjectId(user_id)}
+        ]})
+        return data
+    @classmethod
+    def change_participant_name(cls, conversation_id, current_user_id, name):
+        participant = cls(**cls.get_other_user_in_private(conversation_id, current_user_id))
+        participant.title = name
+        if participant.update():
+            return True
+        return False
 
     def insert(self):
         return db.participants.insert_one(self.bson())

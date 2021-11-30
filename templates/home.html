@@ -86,16 +86,30 @@
                 <h5 id="c_info_name"></h5>
               </div>
               <div class="list-group">
-                <a href="#" class="list-group-item list-group-item-action">
-                  Đổi tên đoạn chat
-                </a>
-                <a href="#" class="list-group-item list-group-item-action" data-toggle="collapse" data-target="#collapseMemberList" aria-expanded="false" aria-controls="collapseMemberList">
-                  Thành viên trong đoạn chat
-                </a>
-                <div class="collapse border rounded" id="collapseMemberList">
-                  <div id="list_member_group">
-                    
+                <div id="options_for_private">
+                  <a onclick="change_conversation_name($('#conversation_item').data('conversation'))"  href="#" class="list-group-item list-group-item-action">
+                    Đổi tên cuộc trò chuyện
+                  </a>
+                </div>
+                <div id="options_for_group">
+                  <a onclick="change_conversation_name($('#conversation_item').data('conversation'))" href="#" class="list-group-item list-group-item-action">
+                    Đổi tên nhóm
+                  </a>
+                  <a href="#" onclick="change_conversation_avatar($('#conversation_item').data('conversation'))" class="list-group-item list-group-item-action">
+                    Đổi ảnh nhóm
+                  </a>
+                  <a href="#" id="c_members" class="list-group-item list-group-item-action" data-toggle="collapse" data-target="#collapseMemberList" aria-expanded="false" aria-controls="collapseMemberList">
+                    Thành viên trong đoạn chat
+                  </a>
+                  <div class="collapse border rounded" id="collapseMemberList">
+                    <button onclick="prepare_add_member($('#conversation_item').data('conversation'))" class="btn btn-primary rounded w-100 my-1">Thêm thành viên</button>
+                    <div id="list_member_group" style="overflow: scroll; max-height: 180px;">
+                      
+                    </div>
                   </div>
+                  <a href="#" onclick="quit_conversation($('#conversation_item').data('conversation'))" class="list-group-item list-group-item-action">
+                    Rời khỏi nhóm
+                  </a>
                 </div>
               </div>
             </div>
@@ -368,31 +382,6 @@
     });
     
   }
-  function showImagePreview(element) {
-    var src = $(element).attr('src');
-    var w = 1280;
-    var h = 720;
-    var left = (window.screen.width / 2) - ((w / 2) + 10);
-    var top = (window.screen.height / 2) - ((h / 2) + 50);
-    window.open(src,'_blank',
-        "status=no,height=" + h + ",width=" + w + ",resizable=yes,left="
-        + left + ",top=" + top + ",screenX=" + left + ",screenY="
-        + top + ",toolbar=no,menubar=yes,scrollbars=no,location=no,directories=no").focus();
-  }
-  function callVideo(){
-    var conversation_id = $("#conversation_item").data("conversation");
-    send_request("{{ current_user.displayname }} vừa gia nhập phòng gặp mặt.", "join_call_room", conversation_id);
-
-    var w = 1280;
-    var h = 720;
-    var left = (window.screen.width / 2) - ((w / 2) + 10);
-    var top = (window.screen.height / 2) - ((h / 2) + 50);
-
-    window.open('/video-call/'+conversation_id,'_blank',
-        "status=no,height=" + h + ",width=" + w + ",resizable=yes,left="
-        + left + ",top=" + top + ",screenX=" + left + ",screenY="
-        + top + ",toolbar=no,menubar=yes,scrollbars=no,location=no,directories=no").focus();
-  }
   function uploadFile(file_input){
     let conversation_id = $("#conversation_item").data('conversation');
     if ($(file_input).get(0).files.length != 0) {
@@ -411,6 +400,7 @@
     data['img_src'] = $(element).find("#conversation_image").attr("src");
     data['id_conversation'] = $(element).data("conversation");
     data['participants'] = $(element).data('participants')
+    data['type'] = $(element).data('type')
 
     $(element).find("#badge_message").addClass("d-none");
     $(element).find("#conversation_message").removeClass("font-weight-bold");
@@ -424,6 +414,7 @@
     let img_src = data['img_src']
     let id_conversation = data['id_conversation']
     let participants = data['participants']
+    let type = data['type']
 
     $("#message_list").css('background-image', 'url('+img_src+')');
 
@@ -435,24 +426,32 @@
     $('#c_info_avatar').attr("src", img_src)
     $('#c_info_name').text(conversation_name);
 
+    if(type == "private") {
+      $('#options_for_group').hide();
+      $('#options_for_private').show();
+    } else {
+      $('#options_for_group').show();
+      $('#options_for_private').hide();
 
-    let list_member_group = $('#list_member_group')
-    $('#list_member_group').empty()
-    participants.forEach(participant => {
-      console.log(participant)
-      let member = $('<div class="ml-1 mt-1 d-flex" data-id="'+participant['user']['_id']['$oid']+'"></div>')
-      let avatar = $('<img class="avatar-circle mr-1" src="/static/'+participant['user']['avatar']+'">')
-      let name = $('<h7 class="font-weight-bold">'+participant['title']+'</h7>')
-      let join_by = $('<p class="join-by font-weight-light font-italic">'+participant['join_by']+'</p>')
-      let info = $('<div></div>')
+      let list_member_group = $('#list_member_group')
+      $('#list_member_group').empty()
+      participants.forEach(participant => {
+        let member = $('<div class="ml-1 mt-1 d-flex" data-id="'+participant['user']['_id']['$oid']+'"></div>')
+        let avatar = $('<img class="avatar-circle mr-1" src="/static/'+participant['user']['avatar']+'">')
+        let name = $('<h7 class="font-weight-bold">'+participant['title']+'</h7>')
+        let join_by = $('<p class="join-by font-weight-light font-italic">'+participant['join_by']+'</p>')
+        let info = $('<div></div>')
 
-      member.append(avatar)
-      member.append(info)
+        member.append(avatar)
+        member.append(info)
 
-      info.append(name)
-      info.append(join_by)
-      list_member_group.append(member)
-    }) 
+        info.append(name)
+        info.append(join_by)
+        list_member_group.append(member)
+      }) 
+    }
+
+
 
     $.ajax({
       url:"/get_messages/"+id_conversation,
@@ -476,30 +475,38 @@
   function prepend_message(data) {
     let message = data['message'];
     let chat_bubble_direction, offset
-    if(data.sender_id['$oid'] == current_user_id) {
-      chat_bubble_direction = "chat-bubble--right"
-      offset = "ml-auto"
-    } else {
-      chat_bubble_direction = "chat-bubble--left"
-    }
-
-    let item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div>');
-    if(data.sender_id['$oid'] != current_user_id) {
-      let avatar = $('<div class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></div>')
-      $(item).find("#offset").prepend(avatar);
-    }
-    if(data.message_type == 'has_attachment') {
+    if(["change_group_name_message", "create_group_message", "add_group_member", "change_group_avatar_message"].some(v => data.message_type.includes(v))) {
+      var item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="mx-auto font-italic">'+data.sender.displayname+' '+message+'</div></div></div>');
       
-      let attachment = render_attachment(data.attachment);
-      $(item).find('#bubble').append(attachment);
-      if(isBlank(message)) {
-        $(item).find("br").remove();
+    } 
+    else 
+    {
+        
+      if(data.sender_id['$oid'] == current_user_id) {
+        chat_bubble_direction = "chat-bubble--right"
+        offset = "ml-auto"
+      } else {
+        chat_bubble_direction = "chat-bubble--left"
       }
-    }
-    
-    if(data.message_type == 'join_call_room') {
-      let joinLink = $('<br><button style="font-size: 0.9rem" onclick="callVideo();" class="btn btn-danger text-upper"><i class="fas fa-video mr-2"></i>Nhấp vào đây để tham gia</button>')
-      $(item).find('#bubble').append(joinLink);
+
+      var item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div>');
+      if(data.sender_id['$oid'] != current_user_id) {
+        let avatar = $('<div class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></div>')
+        $(item).find("#offset").prepend(avatar);
+      }
+      if(data.message_type == 'has_attachment') {
+        
+        let attachment = render_attachment(data.attachment);
+        $(item).find('#bubble').append(attachment);
+        if(isBlank(message)) {
+          $(item).find("br").remove();
+        }
+      }
+      
+      if(data.message_type == 'join_call_room') {
+        let joinLink = $('<br><button style="font-size: 0.9rem" onclick="callVideo();" class="btn btn-danger text-upper"><i class="fas fa-video mr-2"></i>Nhấp vào đây để tham gia</button>')
+        $(item).find('#bubble').append(joinLink);
+      }
     }
 
     $("#message_list").prepend(item)
@@ -508,28 +515,38 @@
   function append_message(data) {
     let message = data['message'];
     let chat_bubble_direction, offset
-    if(data.sender_id['$oid'] == current_user_id) {
-      chat_bubble_direction = "chat-bubble--right"
-      offset = "ml-auto"
-    } else {
-      chat_bubble_direction = "chat-bubble--left"
-    }
-    let item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div>');
-    if(data.sender_id['$oid'] != current_user_id) {
-      let avatar = $('<div class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></div>')
-      $(item).find("#offset").prepend(avatar);
-    }
-    if(data.message_type == 'has_attachment') {
-      let attachment = render_attachment(data.attachment);
-      $(item).find('#bubble').append(attachment);
+
+    if(["change_group_name_message", "create_group_message", "add_group_member", "change_group_avatar_message"].some(v => data.message_type.includes(v))) {
+      var item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="mx-auto font-italic">'+data.sender.displayname+' '+message+'</div></div></div>');
       
-      if(isBlank(message)) {
-        $(item).find("br").remove();
+    } 
+    else 
+      {
+
+      if(data.sender_id['$oid'] == current_user_id) {
+        chat_bubble_direction = "chat-bubble--right"
+        offset = "ml-auto"
+      } else {
+        chat_bubble_direction = "chat-bubble--left"
       }
-    }
-    if(data.message_type == 'join_call_room') {
-      let joinLink = $('<br><button style="font-size: 0.9rem" onclick="callVideo();" class="btn btn-danger text-upper"><i class="fas fa-video mr-2"></i>Nhấp vào đây để tham gia</button>')
-      $(item).find('#bubble').append(joinLink);
+      var item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div>');
+      if(data.sender_id['$oid'] != current_user_id) {
+        let avatar = $('<div class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></div>')
+        $(item).find("#offset").prepend(avatar);
+      }
+      if(data.message_type == 'has_attachment') {
+        let attachment = render_attachment(data.attachment);
+        $(item).find('#bubble').append(attachment);
+        
+        if(isBlank(message)) {
+          $(item).find("br").remove();
+        }
+      }
+      if(data.message_type == 'join_call_room') {
+        let joinLink = $('<br><button style="font-size: 0.9rem" onclick="callVideo();" class="btn btn-danger text-upper"><i class="fas fa-video mr-2"></i>Nhấp vào đây để tham gia</button>')
+        $(item).find('#bubble').append(joinLink);
+      }
+      
     }
 
     $("#message_list").append(item);
@@ -689,6 +706,20 @@
 
 
     $("#message_input").val("");
+  }
+  function callVideo(){
+    var conversation_id = $("#conversation_item").data("conversation");
+    send_request("{{ current_user.displayname }} vừa gia nhập phòng gặp mặt.", "join_call_room", conversation_id);
+
+    var w = 1280;
+    var h = 720;
+    var left = (window.screen.width / 2) - ((w / 2) + 10);
+    var top = (window.screen.height / 2) - ((h / 2) + 50);
+
+    window.open('/video-call/'+conversation_id,'_blank',
+        "status=no,height=" + h + ",width=" + w + ",resizable=yes,left="
+        + left + ",top=" + top + ",screenX=" + left + ",screenY="
+        + top + ",toolbar=no,menubar=yes,scrollbars=no,location=no,directories=no").focus();
   }
 </script>
 {% endblock js %}
