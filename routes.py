@@ -175,7 +175,9 @@ def get_messages(id_conversation):
     Participants.seen_by_c_u(id_conversation, current_user._id)
 
     if conversation and conversation.has_user(current_user._id):
-        list_message = Messages.get_list_message(id_conversation)
+        page = request.form['page'] if 'page' in request.form else 0
+        print(page)
+        list_message = Messages.get_list_message(id_conversation, int(page))
         return dumps(list_message)
     return "Bạn không có quyền truy cập vào cuộc trò truyện này!", 401
 

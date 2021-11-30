@@ -103,7 +103,7 @@
                   </a>
                   <div class="collapse border rounded" id="collapseMemberList">
                     <button onclick="prepare_add_member($('#conversation_item').data('conversation'))" class="btn btn-primary rounded w-100 my-1">Thêm thành viên</button>
-                    <div id="list_member_group" style="overflow: scroll; max-height: 180px;">
+                    <div id="list_member_group" style="overflow-y: scroll; max-height: 180px;">
                       
                     </div>
                   </div>
@@ -194,7 +194,7 @@
 <script src="https://momentjs.com/downloads/moment-with-locales.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
 <script type="text/javascript" charset="utf-8">
-  var spinner = $('<div id="messages_spinner" class="d-flex justify-content-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></div>');
+  var spinner = $('<div id="messages_spinner" class="d-flex justify-content-center mt-1"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></div>');
   
   var socket = io();
   socket.on('connect', function() {
@@ -408,6 +408,7 @@
     change_conversation(data);
   }
   function change_conversation(data){
+    $("#message_list").off('scroll')
     $('#info_conversation').hide(50)
     
     let conversation_name = data['conversation_name']
@@ -420,7 +421,6 @@
 
     $("#chatter_displayname").text(conversation_name);
     $("#chatter_avatar").attr("src", img_src);
-    $("#message_list").append(spinner);
     $("#conversation_item").data("conversation", id_conversation);
     
     $('#c_info_avatar').attr("src", img_src)
@@ -444,24 +444,86 @@
 
         member.append(avatar)
         member.append(info)
-
         info.append(name)
         info.append(join_by)
-        list_member_group.append(member)
+
+        let item = $('<div class="dropdown"></div>')
+        $(member).attr('type', 'button')
+                  .attr('data-toggle', 'dropdown')
+                  .attr('aria-haspopup', 'true')
+                  .attr('aria-expanded', 'false')
+
+        let dropdown = $('<div class="dropdown-menu"></div>')
+        let change_nickname_action = $('<a class="dropdown-item" href="#">Đổi biệt danh</a>')
+        $(change_nickname_action).on('click', ()=> {
+          change_nickname(id_conversation, participant['user']['_id']['$oid'], participant['title'], participant['user']['username'], participant['user']['avatar'])
+        })
+        
+        let kick_action = $('<a class="dropdown-item" href="#">Xoá khỏi cuộc trò chuyện</a>')
+        $(kick_action).on('click', () => {
+          kick_from_conversation(id_conversation, participant['user']['_id']['$oid'], participant['title'], participant['user']['username'], participant['user']['avatar'])
+        })
+        
+        dropdown.append(change_nickname_action)
+        dropdown.append(kick_action)
+          
+        item.append(member)
+        item.append(dropdown)
+
+        list_member_group.append(item)
       }) 
     }
 
 
 
+    $("#message_list").empty();
+    $("#message_list").append(spinner);
     $.ajax({
       url:"/get_messages/"+id_conversation,
       method:"POST",
       success:function(data){ 
           if(data) {
+              var page = 1;
+              var isExecuted = false
               $("#message_list").empty();
               var element = $("#message_list");
               $.each(JSON.parse(data), function(i, item) {
                 prepend_message(item);
+              });
+              $('#message_list').scrollTop($('#message_list')[0].scrollHeight);
+
+              $("#message_list").on('scroll', function() {
+                if($(this).scrollTop() < 100 && !isExecuted) {
+                  isExecuted = true;
+                  $("#message_list").prepend(spinner);
+                  var previous_scrollHeight = $(this)[0].scrollHeight
+                  var previous_scrollTop = $(this).scrollTop()
+
+                  $.ajax({
+                    url:"/get_messages/"+id_conversation,
+                    method:"POST",
+                    data: {page: page},
+                    success:function(data){ 
+                      $("#message_list").find("#messages_spinner").remove()
+                      if(data) {
+                          isExecuted = false
+                          page++;
+                          data = JSON.parse(data);
+                          $.each(data, function(i, item) {
+                            prepend_message(item);
+                          });
+                          $("#message_list").scrollTop($("#message_list")[0].scrollHeight - previous_scrollHeight)
+                          if(data.length < 20) {
+                            $("#message_list").off('scroll');
+                          }
+                      }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                      console.log(xhr);
+                      $("#message_list").find("#messages_spinner").remove()
+                    }
+                  });
+                }
               });
           }
       },
@@ -469,14 +531,12 @@
           console.log(xhr);
       }
     });
-
-
   }
   function prepend_message(data) {
     let message = data['message'];
     let chat_bubble_direction, offset
     if(["change_group_name_message", "create_group_message", "add_group_member", "change_group_avatar_message"].some(v => data.message_type.includes(v))) {
-      var item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="mx-auto font-italic">'+data.sender.displayname+' '+message+'</div></div></div>');
+      var item = $('<div class="row no-gutters"><div id="offset" class="d-flex '+offset+'"><div id="bubble" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="mx-auto font-italic">'+data.sender.displayname+' '+message+'</div></div></div>');
       
     } 
     else 
@@ -489,7 +549,7 @@
         chat_bubble_direction = "chat-bubble--left"
       }
 
-      var item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div>');
+      var item = $('<div class="row no-gutters"><div id="offset" class="d-flex '+offset+'"><div id="message" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="'+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div></div>');
       if(data.sender_id['$oid'] != current_user_id) {
         let avatar = $('<div class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></div>')
         $(item).find("#offset").prepend(avatar);
@@ -507,17 +567,26 @@
         let joinLink = $('<br><button style="font-size: 0.9rem" onclick="callVideo();" class="btn btn-danger text-upper"><i class="fas fa-video mr-2"></i>Nhấp vào đây để tham gia</button>')
         $(item).find('#bubble').append(joinLink);
       }
+      
+      if(data['conversation']['type'] == "group" && data.sender_id['$oid'] != current_user_id) {
+        data['participants'].forEach(participant => {
+          if(participant['user_id']['$oid'] == data.sender_id['$oid']) {
+            let nickname = $('<span class="h7 font-italic text-muted ml-4">'+participant['title']+'</span>')
+            $(item).find("#message").prepend(nickname)
+            $(item).find("#bubble").addClass("mt-0");
+          }
+        })
+      }
     }
 
     $("#message_list").prepend(item)
-    $('#message_list').scrollTop($('#message_list')[0].scrollHeight);
-  }
+  } 
   function append_message(data) {
     let message = data['message'];
     let chat_bubble_direction, offset
 
     if(["change_group_name_message", "create_group_message", "add_group_member", "change_group_avatar_message"].some(v => data.message_type.includes(v))) {
-      var item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="mx-auto font-italic">'+data.sender.displayname+' '+message+'</div></div></div>');
+      var item = $('<div class="row no-gutters"><div id="offset" class="d-flex '+offset+'"><div id="bubble" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="mx-auto font-italic">'+data.sender.displayname+' '+message+'</div></div></div>');
       
     } 
     else 
@@ -529,7 +598,7 @@
       } else {
         chat_bubble_direction = "chat-bubble--left"
       }
-      var item = $('<div class="row no-gutters" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'"><div id="offset" class="d-flex '+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div>');
+      var item = $('<div class="row no-gutters"><div id="offset" class="d-flex '+offset+'"><div id="message" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="'+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div></div>');
       if(data.sender_id['$oid'] != current_user_id) {
         let avatar = $('<div class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></div>')
         $(item).find("#offset").prepend(avatar);
@@ -547,13 +616,23 @@
         $(item).find('#bubble').append(joinLink);
       }
       
+      if(data['conversation']['type'] == "group" && data.sender_id['$oid'] != current_user_id) {
+        data['participants'].forEach(participant => {
+          if(participant['user_id']['$oid'] == data.sender_id['$oid']) {
+            let nickname = $('<span class="h7 font-italic text-muted ml-4">'+participant['title']+'</span>')
+            $(item).find("#message").prepend(nickname)
+            $(item).find("#bubble").addClass("mt-0");
+          }
+        })
+      }
+      
     }
 
     $("#message_list").append(item);
     $('#message_list').scrollTop($('#message_list')[0].scrollHeight);
   }
   function render_attachment(data) {
-    let type = data.file_extention;
+    let type = data?.file_extention;
     var attachment;
     if (["png", "jpg", "gif", "jpeg"].some(v => type.includes(v))) {
       attachment = $('<span><br><img onclick="showImagePreview(this)" class="attachment-image" src='+data.file_path+' alt="Image"></span>')

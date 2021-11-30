@@ -20,7 +20,7 @@ class Messages():
         if data is not None:
             return cls(**data)
 
-    def get_list_message(conversation_id):
+    def get_list_message(conversation_id, page=0):
         data = db.messages.aggregate([
             {"$sort": {"_id": -1}},
             {"$lookup": {
@@ -30,10 +30,22 @@ class Messages():
                 "as": "sender"
             }},
             {"$lookup": {
+                "from": "conversation",
+                "localField": "conversation_id",
+                "foreignField": "_id",
+                "as": "conversation"
+            }},
+            {"$lookup": {
                 "from": "attachment",
                 "localField": "_id",
                 "foreignField": "message_id",
                 "as": "attachment"
+            }},
+            {"$lookup": {
+                "from": "participants",
+                "localField": "conversation_id",
+                "foreignField": "conversation_id",
+                "as": "participants"
             }},
             {"$match": {
                 "conversation_id": ObjectId(conversation_id)
@@ -42,12 +54,15 @@ class Messages():
                 "sender.password": 0
             }},
             {"$unwind":"$sender"},
+            {"$unwind":"$conversation"},
             {"$unwind":
                 {
                     "path": "$attachment",
                     "preserveNullAndEmptyArrays": True
                 }
             },
+            {"$skip": page*20},
+            {"$limit": 20},
         ])
         if data is not None:
             return list(data)

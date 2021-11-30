@@ -198,3 +198,75 @@ function prepare_add_member(conversation_id) {
         },
     })
 }
+function change_nickname(conversation_id, user_id, nickname, username, avatar){
+    let html = $('<div></div>')
+    html.append($('<img class="avatar-circle-lg mx-auto" src="/static/'+avatar+'">'))
+    html.append($('<div class="mx-auto"><span class="h5 font-weight-bold">'+nickname+'</span><br><span class="h7 font-italic">@'+username+'</span></div>'))
+
+    let new_nickname
+    Swal.fire({
+        title: "Đổi biệt danh thành viên",
+        input: 'text',
+        showCancelButton: true,
+        html: html,
+        inputPlaceholder: "Nhập tên bạn muốn đổi thành",
+        showLoaderOnConfirm: true,
+        preConfirm: (value) => {
+            new_nickname = value
+            return $.ajax({
+                data: {name: value},
+                method: "POST",
+                url: '/conversation/'+conversation_id+'/renamezzz'
+            }).then(response => {
+                return response
+            }).catch(error => {
+                console.log(error)
+                Swal.showValidationMessage(
+                  'Lỗi: '+error.responseText
+                )
+            })
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Toast.fire({
+                icon: "success",
+                title: result.value
+            })
+        }
+    })
+}
+function kick_from_conversation(conversation_id, user_id, nickname, username, avatar){
+    let html = $('<div></div>')
+    html.append($('<img class="avatar-circle-lg mx-auto" src="/static/'+avatar+'">'))
+    html.append($('<div class="mx-auto"><span class="h5 font-weight-bold">'+nickname+'</span><br><span class="h7 font-italic">@'+username+'</span></div>'))
+
+    let new_nickname
+    Swal.fire({
+        title: "Bạn có chắc chắn muốn xoá người này khỏi nhóm?",
+        showCancelButton: true,
+        html: html,
+        showLoaderOnConfirm: true,
+        preConfirm: (value) => {
+            new_nickname = value
+            return $.ajax({
+                data: {name: value},
+                method: "POST",
+                url: '/conversation/'+conversation_id+'/renamezzz'
+            }).then(response => {
+                return response
+            }).catch(error => {
+                console.log(error)
+                Swal.showValidationMessage(
+                  'Lỗi: '+error.responseText
+                )
+            })
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Toast.fire({
+                icon: "success",
+                title: result.value
+            })
+        }
+    })
+}
