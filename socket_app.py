@@ -37,6 +37,11 @@ def on_disconnect():
     # print("Current Clients: ")
     # print(clients)
 
+@socketio.on('toggle-stream')
+def on_toggle_stream(room, data):
+    data['peerID'] = str(flask_login.current_user._id)
+    emit('toggle-stream', data, to=room)
+
 @socketio.on('join')
 def on_join(room, peerId):
     join_room(room)

@@ -214,9 +214,44 @@ function change_nickname(conversation_id, user_id, nickname, username, avatar){
         preConfirm: (value) => {
             new_nickname = value
             return $.ajax({
-                data: {name: value},
+                data: {user_id: user_id, nickname: new_nickname},
                 method: "POST",
-                url: '/conversation/'+conversation_id+'/renamezzz'
+                url: '/conversation/'+conversation_id+'/nickname'
+            }).then(response => {
+                return response
+            }).catch(error => {
+                console.log(error)
+                Swal.showValidationMessage(
+                  'Lỗi: '+error.responseText
+                )
+            })
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Toast.fire({
+                icon: "success",
+                title: result.value.message
+            })
+            console.log(result.value)
+        }
+    })
+}
+function kick_from_conversation(conversation_id, user_id, nickname, username, avatar){
+    let html = $('<div></div>')
+    html.append($('<img class="avatar-circle-lg mx-auto" src="/static/'+avatar+'">'))
+    html.append($('<div class="mx-auto"><span class="h5 font-weight-bold">'+nickname+'</span><br><span class="h7 font-italic">@'+username+'</span></div>'))
+
+    Swal.fire({
+        title: "Bạn có chắc chắn muốn xoá người này khỏi nhóm?",
+        showCancelButton: true,
+        html: html,
+        showLoaderOnConfirm: true,
+        preConfirm: (value) => {
+            new_nickname = value
+            return $.ajax({
+                data: {user_id: user_id},
+                method: "POST",
+                url: '/conversation/'+conversation_id+'/kick-member'
             }).then(response => {
                 return response
             }).catch(error => {
@@ -235,23 +270,16 @@ function change_nickname(conversation_id, user_id, nickname, username, avatar){
         }
     })
 }
-function kick_from_conversation(conversation_id, user_id, nickname, username, avatar){
-    let html = $('<div></div>')
-    html.append($('<img class="avatar-circle-lg mx-auto" src="/static/'+avatar+'">'))
-    html.append($('<div class="mx-auto"><span class="h5 font-weight-bold">'+nickname+'</span><br><span class="h7 font-italic">@'+username+'</span></div>'))
-
-    let new_nickname
+function leave_conversation(conversation_id){
     Swal.fire({
-        title: "Bạn có chắc chắn muốn xoá người này khỏi nhóm?",
+        title: "Bạn có chắc chắn muốn rời khỏi nhóm?",
         showCancelButton: true,
-        html: html,
         showLoaderOnConfirm: true,
-        preConfirm: (value) => {
-            new_nickname = value
+        preConfirm: () => {
             return $.ajax({
-                data: {name: value},
+                data: {conversation_id: conversation_id},
                 method: "POST",
-                url: '/conversation/'+conversation_id+'/renamezzz'
+                url: '/conversation/'+conversation_id+'/leave'
             }).then(response => {
                 return response
             }).catch(error => {

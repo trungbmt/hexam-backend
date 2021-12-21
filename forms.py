@@ -7,17 +7,17 @@ from wtforms.validators import DataRequired, Email, EqualTo, Length
 from flask_wtf.file import FileAllowed
 
 class RegistrationForm(FlaskForm):
-    username = StringField('Tên tài khoản', validators=[DataRequired(), Length(min=5, max=32)])
-    email = StringField('Địa chỉ email', validators=[DataRequired(), Email(message="Địa chỉ email không hợp lệ!")])
-    password = PasswordField('Mật khẩu', validators=[DataRequired()])
-    confirm_password = PasswordField('Nhập lại mật khẩu', validators=[DataRequired(), EqualTo('password', message="Nhập lại mật khẩu không khớp!")])
-    submit = SubmitField('Đăng ký')
+    username = StringField('Username', validators=[DataRequired(), Length(min=5, max=32)])
+    email = StringField('Email', validators=[DataRequired(), Email(message="Địa chỉ email không hợp lệ!")])
+    password = PasswordField('Password', validators=[DataRequired()])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password', message="Nhập lại mật khẩu không khớp!")])
+    submit = SubmitField('Sign-Up')
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Mật khẩu', validators=[DataRequired()])
-    remember = BooleanField('Lưu đăng nhập')
-    submit = SubmitField('Đăng nhập')
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember = BooleanField('Remember me')
+    submit = SubmitField('Login')
 
 class UpdateAccountForm(FlaskForm):
     displayname = StringField('Họ và tên', validators=[DataRequired(), Length(min=5, max=50)])

@@ -38,7 +38,9 @@ body {
 .user-profile {
     padding: 20px 0
 }
-
+.form-check-inline .form-check-input {
+    position: relative !important;
+}
 .card-block {
     padding: 1.25rem
 }
@@ -46,7 +48,11 @@ body {
 .m-b-25 {
     margin-bottom: 25px
 }
-
+#avatar_friend{
+    width: 128px;
+    height: 128px;
+    object-fit: cover;
+}
 .img-radius {
     border-radius: 5px
 }

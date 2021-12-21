@@ -31,6 +31,10 @@ body {
   -webkit-transition: width 2s, height 2s, transform 2s;
   transition: width 2s, height 2s, transform 2s;
 }
+.fast_transform {
+  -webkit-transition: width .5s, height .5s, transform .5s;
+  transition: width .5s, height .5s, transform .5s;
+}
 .profile-image {
   width: 50px;
   height: 50px;
@@ -140,13 +144,19 @@ hr {
   border: 1px black;
   object-fit: cover;
 }
+.avatar-circle-md {
+  width: 96px;
+  height: 96px;
+  border-radius: 48px;
+  border: 1px black;
+  object-fit: cover;
+}
 .avatar-circle-lg {
   width: 128px;
   height: 128px;
   border-radius: 64px;
   border: 1px black;
   object-fit: cover;
-
 }
 .chat-panel {
   overflow-x: hidden;

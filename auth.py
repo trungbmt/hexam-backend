@@ -1,4 +1,5 @@
 from flask.helpers import flash, url_for
+from flask.scaffold import F
 from flask.templating import render_template
 from flask_login import LoginManager
 import flask_login
@@ -8,6 +9,7 @@ from flask import Blueprint, redirect
 from app import db
 from app import app
 import utils
+from flask import request
 from models import User
 
 
@@ -22,6 +24,9 @@ def load_user(user_id):
         return user
     else:
         return None
+@login_manager.unauthorized_handler
+def unauthorized():
+    return redirect(url_for('auth.login'), code=302)
 
 auth = Blueprint('auth', __name__)
 
@@ -40,9 +45,9 @@ def register():
         ]})
         if exist_user:
             if(exist_user['email']==registerForm.email.data):
-                flash("Địa chỉ email đã tồn tại!", "danger")
+                flash("Địa chỉ email đã tồn tại!", "error")
             else:
-                flash("Tên đăng nhập đã tồn tại!", "danger")
+                flash("Tên đăng nhập đã tồn tại!", "error")
         else:
             user = {
                 "email": registerForm.email.data,
@@ -57,7 +62,7 @@ def register():
                 flash("Đăng ký tài khoản thành công!", "success")
                 return redirect('/home')
             else:
-                flash("Lỗi hệ thống!", "danger")
+                flash("Lỗi hệ thống!", "error")
     return render_template('auth/register.html', form=registerForm, title="Đăng ký")
 
 
@@ -71,9 +76,9 @@ def login():
         if User.login_valid(loginForm.email.data, loginForm.password.data):
             user = User.get_by_email(loginForm.email.data)
             login_user(user, remember=loginForm.remember.data)
-            flash("Chào {} Đăng nhập thành công!".format(user.username), "success")
+            flash("Chào {}, đăng nhập thành công!".format(user.username), "success")
             return redirect('/home')
-        flash("Tài khoản hoặc mật khẩu không chính xác!", "danger")
+        flash("Tài khoản hoặc mật khẩu không chính xác!", "error")
     return render_template('auth/login.html', form=loginForm)
 
 

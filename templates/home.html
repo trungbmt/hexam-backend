@@ -10,7 +10,7 @@
     <div class="row no-gutters">
       <div class="col-md-4 border-right mt-5 bg-light rounded">
         <div class="settings-tray">
-          <img class="profile-image" src="{{url_for('static', filename=current_user.avatar)}}" alt="Profile img">
+          <a href="/profile/{{current_user.username}}"><img class="profile-image" src="{{url_for('static', filename=current_user.avatar)}}" alt="Profile img"></a>
           <span class="settings-tray--right">
             <i class="material-icons" onclick="location.reload();">cached</i>
             <i id="dropdown_newchat" class="material-icons" type="button" data-toggle="dropdown">message</i>
@@ -65,12 +65,10 @@
             <div id="conversation_item" class="friend-drawer no-gutters friend-drawer--grey">
             <img id="chatter_avatar" class="profile-image" src="https://www.clarity-enhanced.net/wp-content/uploads/2020/06/robocop.jpg" alt="">
             <div class="text">
-              <h6 id="chatter_displayname">Robo Cop</h6>
+              <h6 id="chatter_displayname"></h6>
               <p id="chatter_status" class="text-muted">Online...</p>
             </div>
-            <span class="settings-tray--right">
-              <i class="material-icons">cached</i>
-              <i class="material-icons">message</i>
+            <span class="settings-tray--right ml-auto">
               <i onclick="callVideo()" class="material-icons">videocam</i>
               <i class="material-icons" onclick="$('#info_conversation').toggle(200)">menu</i>
             </span>
@@ -107,7 +105,7 @@
                       
                     </div>
                   </div>
-                  <a href="#" onclick="quit_conversation($('#conversation_item').data('conversation'))" class="list-group-item list-group-item-action">
+                  <a href="#" onclick="leave_conversation($('#conversation_item').data('conversation'))" class="list-group-item list-group-item-action">
                     Rời khỏi nhóm
                   </a>
                 </div>
@@ -435,7 +433,7 @@
 
       let list_member_group = $('#list_member_group')
       $('#list_member_group').empty()
-      participants.forEach(participant => {
+      participants?.forEach(participant => {
         let member = $('<div class="ml-1 mt-1 d-flex" data-id="'+participant['user']['_id']['$oid']+'"></div>')
         let avatar = $('<img class="avatar-circle mr-1" src="/static/'+participant['user']['avatar']+'">')
         let name = $('<h7 class="font-weight-bold">'+participant['title']+'</h7>')
@@ -455,6 +453,7 @@
 
         let dropdown = $('<div class="dropdown-menu"></div>')
         let change_nickname_action = $('<a class="dropdown-item" href="#">Đổi biệt danh</a>')
+        let profile_action = $('<a target="_blank" class="dropdown-item" href="/profile/'+participant['user']['username']+'">Xem trang cá nhân</a>')
         $(change_nickname_action).on('click', ()=> {
           change_nickname(id_conversation, participant['user']['_id']['$oid'], participant['title'], participant['user']['username'], participant['user']['avatar'])
         })
@@ -465,6 +464,7 @@
         })
         
         dropdown.append(change_nickname_action)
+        dropdown.append(profile_action)
         dropdown.append(kick_action)
           
         item.append(member)
@@ -535,8 +535,8 @@
   function prepend_message(data) {
     let message = data['message'];
     let chat_bubble_direction, offset
-    if(["change_group_name_message", "create_group_message", "add_group_member", "change_group_avatar_message"].some(v => data.message_type.includes(v))) {
-      var item = $('<div class="row no-gutters"><div id="offset" class="d-flex '+offset+'"><div id="bubble" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="mx-auto font-italic">'+data.sender.displayname+' '+message+'</div></div></div>');
+    if(["leave_group_message" ,"change_group_name_message", "create_group_message", "add_group_member", "change_group_avatar_message", "change_member_nickname_message", "kick_member_message"].some(v => data.message_type.includes(v))) {
+      var item = $('<div class="row no-gutters"><div id="offset" class="d-flex '+offset+'"><div id="bubble" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="mx-auto font-italic px-1 my-1 bg-white rounded">'+data.sender.displayname+' '+message+'</div></div></div>');
       
     } 
     else 
@@ -549,9 +549,9 @@
         chat_bubble_direction = "chat-bubble--left"
       }
 
-      var item = $('<div class="row no-gutters"><div id="offset" class="d-flex '+offset+'"><div id="message" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="'+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div></div>');
+      var item = $('<div class="mx-1 row no-gutters text-decoration-none text-dark"><div id="offset" class="d-flex '+offset+'"><div id="message" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="'+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div></div>');
       if(data.sender_id['$oid'] != current_user_id) {
-        let avatar = $('<div class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></div>')
+        let avatar = $('<a target="_blank" href="/profile/'+data.sender.username+'" class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></a>')
         $(item).find("#offset").prepend(avatar);
       }
       if(data.message_type == 'has_attachment') {
@@ -585,8 +585,8 @@
     let message = data['message'];
     let chat_bubble_direction, offset
 
-    if(["change_group_name_message", "create_group_message", "add_group_member", "change_group_avatar_message"].some(v => data.message_type.includes(v))) {
-      var item = $('<div class="row no-gutters"><div id="offset" class="d-flex '+offset+'"><div id="bubble" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="mx-auto font-italic">'+data.sender.displayname+' '+message+'</div></div></div>');
+    if(["leave_group_message" ,"change_group_name_message", "create_group_message", "add_group_member", "change_group_avatar_message", "change_member_nickname_message", "kick_member_message"].some(v => data.message_type.includes(v))) {
+      var item = $('<div class="row no-gutters"><div id="offset" class="d-flex '+offset+'"><div id="bubble" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="mx-auto font-italic px-1 my-1 bg-white rounded">'+data.sender.displayname+' '+message+'</div></div></div>');
       
     } 
     else 
@@ -598,9 +598,9 @@
       } else {
         chat_bubble_direction = "chat-bubble--left"
       }
-      var item = $('<div class="row no-gutters"><div id="offset" class="d-flex '+offset+'"><div id="message" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="'+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div></div>');
+      var item = $('<div class="mx-1 row no-gutters text-decoration-none text-dark"><div id="offset" class="d-flex '+offset+'"><div id="message" data-toggle="tooltip" data-placement="top" title="'+dateFromObjectId(data._id['$oid'])+'" class="'+offset+'"><div id="bubble" class="chat-bubble '+chat_bubble_direction+' '+offset+'">'+message+'</div></div></div></div>');
       if(data.sender_id['$oid'] != current_user_id) {
-        let avatar = $('<div class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></div>')
+        let avatar = $('<a target="_blank" href="/profile/'+data.sender.username+'" class="my-auto"><img class="avatar-circle" src="/static/'+data.sender.avatar+'"></a>')
         $(item).find("#offset").prepend(avatar);
       }
       if(data.message_type == 'has_attachment') {
@@ -627,7 +627,6 @@
       }
       
     }
-
     $("#message_list").append(item);
     $('#message_list').scrollTop($('#message_list')[0].scrollHeight);
   }

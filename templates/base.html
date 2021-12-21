@@ -19,14 +19,6 @@
     </header>
     <div>
         
-        {% for category, message in get_flashed_messages(with_categories=true) %}
-            <div class="alert alert-{{ category }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-        {% if current_user.is_authenticated %}
-            
-        {% endif %}
     </div>
     {% block content %}{% endblock %}
 </section>
@@ -51,6 +43,13 @@
             toast.addEventListener('mouseleave', Swal.resumeTimer)
         }
     });
+    
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+        Toast.fire({
+            icon: "{{ category }}",
+            title: "{{ message }}"
+        })
+    {% endfor %}
     function dateFromObjectId (objectId) {
         return new Date(parseInt(objectId.substring(0, 8), 16) * 1000);
     };
@@ -77,5 +76,6 @@
     function isBlank(str) {
         return (!str || /^\s*$/.test(str));
     }
+    
 </script>
 {% block js %}{% endblock %}

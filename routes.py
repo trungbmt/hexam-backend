@@ -65,7 +65,10 @@ def messages():
         json= json_util
     )
 
-
+@app.route("/api/user/<username>")
+def get_user(username):
+    user = User.get_by_username(username) or User.get_by_id(username)
+    return user.info()
 @app.route("/profile/<username>", methods=['GET', 'POST'])
 def profile(username):
 
@@ -355,7 +358,7 @@ def group_add_member(id_conversation):
             if p['user_id'] != current_user._id:
                 Participants.seen_by_id(p['_id'], False)
 
-            sendMessageTo(participant['user_id'], json_mess)
+            sendMessageTo(p['user_id'], json_mess)
         data = {
             "message": "Thêm thành viên thành công!",
             "participant": participant
@@ -432,6 +435,100 @@ def change_conversation_avatar(id_conversation):
             return file_path, 200
         return "Không tìm thấy file", 400
     return "Không thể đổi ảnh nhóm!", 400
+
+@app.route('/conversation/<id_conversation>/nickname', methods=['POST'])
+@login_required
+def change_nickname(id_conversation):
+    conversation = Conversation.get_by_id(id_conversation)
+    if 'user_id' in request.form and 'nickname' in request.form:
+        if conversation and conversation.has_user(current_user._id):
+            user = User.get_by_id(request.form['user_id'])
+            nickname = request.form['nickname']
+            participant = Participants.change_nickname(id_conversation, user._id, nickname).json()
+            if participant:
+                message_data = {
+                    "sender_id": current_user._id,
+                    "conversation_id": id_conversation,
+                    "message": "vừa đổi biệt danh của '{}' thành '{}'".format(user.displayname, nickname),
+                    "message_type": 'change_member_nickname_message',
+                }
+                result = Messages(**message_data).insert()
+                message_inserted = Messages.get_message_and_sender(result.inserted_id)
+                json_mess = json.loads(json_util.dumps(message_inserted))
+                participants = Participants.get_by_conversation_with_user(id_conversation)
+                json_mess['participants'] = json.loads(json_util.dumps(participants))
+                json_mess['participant'] = participant
+
+                for p in participants:
+                    if p['user_id'] != current_user._id:
+                        Participants.seen_by_id(p['_id'], False)
+                    sendMessageTo(p['user_id'], json_mess)
+
+                return {
+                    "message": "Đổi biệt danh thành viên thành công!",
+                    "participant": participant
+                }, 200
+    return "Không thể đổi biệt danh thành viên!", 400
+
+@app.route('/conversation/<id_conversation>/kick-member', methods=['POST'])
+@login_required
+def kick_member(id_conversation):
+    conversation = Conversation.get_by_id(id_conversation)
+    if conversation and conversation.has_user(current_user._id) and 'user_id' in request.form:
+        user = User.get_by_id(request.form['user_id'])
+        participant = Participants(**Participants.get_by_c_and_u(id_conversation, user._id))
+        is_success = participant.delete()
+        if is_success:
+            message_data = {
+                "sender_id": current_user._id,
+                "conversation_id": id_conversation,
+                "message": "vừa mời '{}' ra khỏi nhóm".format(user.displayname),
+                "message_type": 'kick_member_message',
+            }
+            result = Messages(**message_data).insert()
+            message_inserted = Messages.get_message_and_sender(result.inserted_id)
+            json_mess = json.loads(json_util.dumps(message_inserted))
+            participants = Participants.get_by_conversation_with_user(id_conversation)
+            json_mess['participants'] = json.loads(json_util.dumps(participants))
+
+            for p in participants:
+                if p['user_id'] != current_user._id:
+                    Participants.seen_by_id(p['_id'], False)
+                sendMessageTo(p['user_id'], json_mess)
+
+            return "Mời thành viên ra khỏi nhóm thành công!", 200
+           
+    return "Không thể mời thành viên này ra khỏi nhóm!", 400
+
+
+@app.route('/conversation/<id_conversation>/leave', methods=['POST'])
+@login_required
+def leave_conversation(id_conversation):
+    conversation = Conversation.get_by_id(id_conversation)
+    if conversation.has_user(current_user._id):
+        participant = Participants(**Participants.get_by_c_and_u(id_conversation, current_user._id))
+        is_success = participant.delete()
+        if is_success:
+            message_data = {
+                "sender_id": current_user._id,
+                "conversation_id": id_conversation,
+                "message": "vừa rời khỏi nhóm",
+                "message_type": 'leave_group_message',
+            }
+            result = Messages(**message_data).insert()
+            message_inserted = Messages.get_message_and_sender(result.inserted_id)
+            json_mess = json.loads(json_util.dumps(message_inserted))
+            participants = Participants.get_by_conversation_with_user(id_conversation)
+            json_mess['participants'] = json.loads(json_util.dumps(participants))
+
+            for p in participants:
+                if p['user_id'] != current_user._id:
+                    Participants.seen_by_id(p['_id'], False)
+                sendMessageTo(p['user_id'], json_mess)
+
+            return "Rời khỏi nhóm thành công!", 200
+           
+    return "Không thể rời khỏi nhóm!", 400
 ########## TEST AREA ########################
 @app.route("/get_list_conversation/<id_user>")
 def get_list_conversation(id_user):
@@ -441,5 +538,6 @@ def get_list_conversation(id_user):
 def get_list_message(id_conversation):
     return dumps(Messages.get_list_message(id_conversation))
 @app.route("/video-call/<room_id>")
+@login_required
 def video_call(room_id):
     return render_template('call/video.html', title="Gọi video trên Hexam", room_id=room_id)

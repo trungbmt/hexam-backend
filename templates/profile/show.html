@@ -77,29 +77,18 @@
                                     </div>
                                 </div>
                                 <!-- <div class="card-footer bg-white px-0 "> --><br>
+                                    {% if current_user.username == user['username'] %}
                                     <h6 class="m-b-20 p-b-5 b-b-default f-w-600">Bạn bè</h6>
                                     <div class="row">
                                         
-                                        {% if current_user.username == user['username'] %}
                                             <div class="col-md-auto">
                                                 <button type="button" data-toggle="modal" data-target="#myModalFriendRequest" class="btn btn-outline-primary">
                                                     Xem lời mời kết bạn <span class="badge badge-danger" id="pending_request_count">{{ pending }}</span>
                                                 </button>
+                                                <button class="btn btn-outline-info" type="button" data-toggle="modal" data-target="#myModalFriendList"><img src="https://img.icons8.com/metro/26/000000/more.png" width="20" height="20" class="mr-2 more"><small>DANH SÁCH BẠN BÈ</small></i></button> 
                                             </div>
-                                        {% endif %}
-                                        <div class="col-md-auto ">
-                                            <ul class="list-inline">
-                                                <li class="list-inline-item"> 
-                                                    <img src="https://res.cloudinary.com/dxfq3iotg/image/upload/v1573035860/Pra/Hadie-profile-pic-circle-1.png" alt="DP" class=" rounded-circle img-fluid " width="35" height="35"> 
-                                                    <img src="https://res.cloudinary.com/dxfq3iotg/image/upload/v1573035909/Pra/Loren-profile-pic-circle.png" alt="DP" class=" rounded-circle img-fluid " width="35" height="35"> 
-                                                    <img src="https://res.cloudinary.com/dxfq3iotg/image/upload/v1573035929/Pra/59d280613165c000014cc031_circleniamhhogan.png" alt="DP" class=" rounded-circle img-fluid " width="35" height="35"> <img src="https://res.cloudinary.com/dxfq3iotg/image/upload/v1573035929/Pra/59d280613165c000014cc031_circleniamhhogan.png" alt="DP" class=" rounded-circle img-fluid " width="35" height="35">
-                                                </li>
-                                                <li class="list-inline-item"> 
-                                                    <button class="btn" type="button" data-toggle="modal" data-target="#myModalFriendList"><img src="https://img.icons8.com/metro/26/000000/more.png" width="20" height="20" class="mr-2 more"><small>MORE</small></i></button> 
-                                                </li>
-                                            </ul>
-                                        </div>
                                     </div>
+                                    {% endif %}
                                 <!-- </div> -->
                             </div>
                         </div>

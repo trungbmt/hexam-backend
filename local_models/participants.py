@@ -88,12 +88,27 @@ class Participants:
         if participant.update():
             return True
         return False
+    @classmethod
+    def change_nickname(cls, conversation_id, user_id, nickname):
+        data = db.participants.find_one({"$and": [
+            {"conversation_id": ObjectId(conversation_id)},
+            {"user_id": ObjectId(user_id)}
+        ]})
+        if data is not None:
+            participant = cls(**data)
+            participant.title = nickname
+            participant.update()
+            return participant
+        return None
 
     def insert(self):
         return db.participants.insert_one(self.bson())
 
     def update(self):
         return db.participants.update_one({"_id": ObjectId(self._id)}, {"$set": self.bson()})
+        
+    def delete(self):
+        return db.participants.delete_one({"_id": ObjectId(self._id)})
 
     @classmethod
     def create_participant(cls, conversation_id, user, join_by):
@@ -116,4 +131,13 @@ class Participants:
             "conversation_id": ObjectId(self.conversation_id),
             "join_by": self.join_by,
             "seen": self.seen
+        }
+    def json(self):
+        return {
+            "_id": str(self._id),
+            "title": self.title,
+            "user_id": str(self.user_id),
+            "conversation_id": str(self.conversation_id),
+            "join_by": self.join_by if self.join_by is not None else "",
+            "seen": self.seen if self.seen is not None else "None"
         }
