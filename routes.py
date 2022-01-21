@@ -1,4 +1,4 @@
-import re
+from turtle import title
 from bson import json_util
 from bson.json_util import loads, dumps
 import os, uuid
@@ -65,6 +65,12 @@ def messages():
         json= json_util
     )
 
+@app.route("/404")
+def error_page():
+    return render_template('404.html', 
+        title="Lỗi")
+
+
 @app.route("/api/user/<username>")
 def get_user(username):
     user = User.get_by_username(username) or User.get_by_id(username)
@@ -74,7 +80,8 @@ def profile(username):
 
     user = User.get_by_username(username)
     if not user:
-        return redirect('/404')
+        flash("Không tìm thấy người dùng!", "error")
+        return redirect('/messages')
 
 
     frship = None
@@ -540,4 +547,7 @@ def get_list_message(id_conversation):
 @app.route("/video-call/<room_id>")
 @login_required
 def video_call(room_id):
-    return render_template('call/video.html', title="Gọi video trên Hexam", room_id=room_id)
+    conversation = Conversation.get_by_id(room_id)
+    if conversation.has_user(current_user._id):
+        return render_template('call/video.html', title="Gọi video trên Hexam", room_id=room_id)
+    return "Bạn không thể tham gia cuộc hội thoại này!", 400

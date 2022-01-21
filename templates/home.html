@@ -11,14 +11,25 @@
       <div class="col-md-4 border-right mt-5 bg-light rounded">
         <div class="settings-tray">
           <a href="/profile/{{current_user.username}}"><img class="profile-image" src="{{url_for('static', filename=current_user.avatar)}}" alt="Profile img"></a>
-          <span class="settings-tray--right">
-            <i class="material-icons" onclick="location.reload();">cached</i>
-            <i id="dropdown_newchat" class="material-icons" type="button" data-toggle="dropdown">message</i>
-            <div class="dropdown-menu col-8">
-              <div class="border bg-muted">
-                <input id="ip_sfnc" class="form-control" type="text" placeholder="Tên người dùng">
+          <span class="settings-tray--right d-flex">
+            <div>
+              <i id="dropdown_search_user" class="material-icons" type="button" data-toggle="dropdown">add</i>
+              <div class="dropdown-menu col-8" aria-labelledby="dropdown_search_user">
+                <div class="border bg-muted d-flex">
+                  <input id="input_search_name" class="form-control" type="text" placeholder="username">
+                  <button class="btn btn-primary" onclick="window.location.href = '/profile/'+$('#input_search_name').val()">SEARCH</button>
+                </div>
               </div>
-              <div id="newchat_search_box">
+            </div>
+            <i class="material-icons" onclick="location.reload();">cached</i>
+            <div>
+              <i id="dropdown_newchat" class="material-icons" type="button" data-toggle="dropdown">message</i>
+              <div class="dropdown-menu col-8" aria-labelledby="dropdown_newchat">
+                <div class="border bg-muted">
+                  <input id="ip_sfnc" class="form-control" type="text" placeholder="Tên người dùng">
+                </div>
+                <div id="newchat_search_box">
+                </div>
               </div>
             </div>
             <i class="material-icons" onclick="$('#myModalAddGroupsChat').modal('show')">group_add</i>
@@ -793,11 +804,19 @@
     var h = 720;
     var left = (window.screen.width / 2) - ((w / 2) + 10);
     var top = (window.screen.height / 2) - ((h / 2) + 50);
+    if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
 
-    window.open('/video-call/'+conversation_id,'_blank',
+      window.open('/video-call/'+conversation_id,'_blank',
         "status=no,height=" + h + ",width=" + w + ",resizable=yes,left="
         + left + ",top=" + top + ",screenX=" + left + ",screenY="
         + top + ",toolbar=no,menubar=yes,scrollbars=no,location=no,directories=no").focus();
+    } else {
+      
+      window.open('https:/'+window.location.host+'/video-call/'+conversation_id,'_blank',
+          "status=no,height=" + h + ",width=" + w + ",resizable=yes,left="
+          + left + ",top=" + top + ",screenX=" + left + ",screenY="
+          + top + ",toolbar=no,menubar=yes,scrollbars=no,location=no,directories=no").focus();
+    }
   }
 </script>
 {% endblock js %}

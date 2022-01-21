@@ -132,24 +132,26 @@
     })
     socket.on('toggle-stream', function(data) {
         console.log(data)
-        var item = $("#"+data.peerID);
-        if(data.type == "mic") {
-            var mic_off = $('<div class="position-absolute h3" id="mic_off"><span class="badge badge-dark material-icons">mic_off</span></div>')
-            $(mic_off).css('transform', 'translate(450%, 50%)')
-            if(data.status == true) {
-                $(item).children("#mic_off").remove()
+        setTimeout(() => {
+            var item = $("#"+data.peerID);
+            if(data.type == "mic") {
+                var mic_off = $('<div class="position-absolute h3" id="mic_off"><span class="badge badge-dark material-icons">mic_off</span></div>')
+                $(mic_off).css('transform', 'translate(450%, 50%)')
+                if(data.status == true) {
+                    $(item).children("#mic_off").remove()
+                }
+                else {
+                    $(item).prepend(mic_off)
+                }
             }
-            else {
-                $(item).prepend(mic_off)
+            else if(data.type == "cam") {
+                if(data.status == true) {
+                    $(item).find("img").css('transform', '');
+                } else {
+                    $(item).find("img").css('transform', 'translateY(150%) translateX(200%)');
+                }
             }
-        }
-        else if(data.type == "cam") {
-            if(data.status == true) {
-                $(item).find("img").css('transform', '');
-            } else {
-                $(item).find("img").css('transform', 'translateY(150%) translateX(200%)');
-            }
-        }
+        }, 300)
     })
 
     function addVideoStream(video, stream, userId) {

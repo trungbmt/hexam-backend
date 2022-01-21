@@ -109,15 +109,15 @@ class Friend():
             return cls(**data)
 
     def count_pending(_id):
-        data = db.friends.find({"receiver_id": ObjectId(_id), "status": "pending"}).sort('created_at',pymongo.DESCENDING).count()
+        data = db.friends.count_documents({"receiver_id": ObjectId(_id), "status": "pending"})
         return data
     def count_friend(_id):
-        data = db.friends.find(
+        data = db.friends.count_documents(
             {"$and":[ 
                 {"$or":[ 
                     {"sender_id":ObjectId(_id)}, 
                     {"receiver_id":ObjectId(_id)}]}, 
-                {"status": "accepted"}]}).sort('created_at',pymongo.DESCENDING).count()
+                {"status": "accepted"}]})
         return data
 
     @classmethod
